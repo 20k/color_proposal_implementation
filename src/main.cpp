@@ -9,6 +9,8 @@ int main()
 
     color::convert(val, fval);
 
+    std::cout << "Optimised conversion? " << color::has_optimised_conversion(val, fval) << std::endl;
+
     std::cout << "fval " << fval.r << " " << fval.g << " " << fval.b << std::endl;
 
     return 0;

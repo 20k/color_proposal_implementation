@@ -367,15 +367,35 @@ namespace color
         out.b = f.b * 255.f;
     }
 
+    template<typename T, typename U, typename = void>
+    struct has_direct_conversion_c : std::false_type{};
+
+    template<typename T, typename U>
+    struct has_direct_conversion_c<T, U, std::void_t<decltype(direct_convert(std::declval<T>(), std::declval<U>()))>> : std::true_type{};
+
+    template<typename T, typename U>
+    constexpr bool has_optimised_conversion(const T& one, const U& two)
+    {
+        return has_direct_conversion_c<T, U>::value;
+    }
+
     template<typename from_space_1, typename to_space_2, typename... from_tags_1, typename... to_tags_2>
     inline
     void
     convert(const basic_color<from_space_1, from_tags_1...>& c1, basic_color<to_space_2, to_tags_2...>& c2)
     {
         ///if exists direct conversion use that, otherwise use toXYZ
-        XYZ_float intermediate;
-        direct_convert(c1, intermediate);
-        direct_convert(intermediate, c2);
+
+        if constexpr(has_optimised_conversion(c1, c2))
+        {
+            return direct_convert(c1, c2);
+        }
+        else
+        {
+            XYZ_float intermediate;
+            direct_convert(c1, intermediate);
+            direct_convert(intermediate, c2);
+        }
     }
 }
 
