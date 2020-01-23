@@ -371,7 +371,7 @@ namespace color
     struct has_direct_conversion_c : std::false_type{};
 
     template<typename T, typename U>
-    struct has_direct_conversion_c<T, U, std::void_t<decltype(direct_convert(std::declval<T>(), std::declval<U>()))>> : std::true_type{};
+    struct has_direct_conversion_c<T, U, std::void_t<decltype(direct_convert(std::declval<T>(), std::declval<U&>()))>> : std::true_type{};
 
     template<typename T, typename U>
     constexpr bool has_optimised_conversion(const T& one, const U& two)
@@ -385,7 +385,6 @@ namespace color
     convert(const basic_color<from_space_1, from_tags_1...>& c1, basic_color<to_space_2, to_tags_2...>& c2)
     {
         ///if exists direct conversion use that, otherwise use toXYZ
-
         if constexpr(has_optimised_conversion(c1, c2))
         {
             return direct_convert(c1, c2);
