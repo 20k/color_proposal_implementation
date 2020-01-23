@@ -5,7 +5,7 @@
 
 struct custom_color_space : color::basic_color_space<custom_color_space>
 {
-
+    float q=0, g=0, b=0, f=0, w=0;
 };
 
 struct custom_color : color::basic_color<custom_color_space>
