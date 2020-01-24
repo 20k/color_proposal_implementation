@@ -400,6 +400,117 @@ namespace color
 }
 #endif // THIRD_DESIGN
 
+namespace temporary
+{
+    struct matrix_3x3
+    {
+        float a[3][3] = {0};
+
+        float determinant()
+        {
+            float a11, a12, a13, a21, a22, a23, a31, a32, a33;
+
+            a11 = a[0][0];
+            a12 = a[0][1];
+            a13 = a[0][2];
+
+            a21 = a[1][0];
+            a22 = a[1][1];
+            a23 = a[1][2];
+
+            a31 = a[2][0];
+            a32 = a[2][1];
+            a33 = a[2][2];
+
+            return a11*a22*a33 + a21*a32*a13 + a31*a12*a23 - a11*a32*a23 - a31*a22*a13 - a21*a12*a33;
+        }
+
+        matrix_3x3 invert()
+        {
+            float d = determinant();
+
+            float a11, a12, a13, a21, a22, a23, a31, a32, a33;
+
+            a11 = a[0][0];
+            a12 = a[0][1];
+            a13 = a[0][2];
+
+            a21 = a[1][0];
+            a22 = a[1][1];
+            a23 = a[1][2];
+
+            a31 = a[2][0];
+            a32 = a[2][1];
+            a33 = a[2][2];
+
+            float t0 = a22 * a33 - a23 * a32;
+            float t1 = a13 * a32 - a12 * a33;
+            float t2 = a12 * a23 - a13 * a22;
+
+            float m0 = a23 * a31 - a21 * a33;
+            float m1 = a11 * a33 - a13 * a31;
+            float m2 = a13 * a21 - a11 * a23;
+
+            float b0 = a21 * a32 - a22 * a31;
+            float b1 = a12 * a31 - a11 * a32;
+            float b2 = a11 * a22 - a12 * a21;
+
+            t0 *= d;
+            t1 *= d;
+            t2 *= d;
+
+            m0 *= d;
+            m1 *= d;
+            m2 *= d;
+
+            b0 *= d;
+            b1 *= d;
+            b2 *= d;
+
+            return {{{t0, t1, t2}, {m0, m1, m2}, {b0, b1, b2}}};
+        }
+    };
+
+    matrix_3x3 multiply(const matrix_3x3& one, const matrix_3x3& two)
+    {
+        matrix_3x3 ret;
+
+        for(int i=0; i < 3; i++)
+        {
+            for(int j=0; j < 3; j++)
+            {
+                float sum = 0;
+
+                for(int k=0; k < 3; k++)
+                {
+                    sum += one.a[i][k] * two.a[k][j];
+                }
+
+                ret.a[i][j] = sum;
+            }
+        }
+
+        return ret;
+    }
+
+    struct vector_1x3
+    {
+        float a[3] = {0};
+    };
+
+    vector_1x3 multiply(const matrix_3x3& one, const vector_1x3& vec)
+    {
+        vector_1x3 ret;
+        ret.a[0] = one.a[0][0] * vec.a[0] + one.a[0][1] * vec.a[1] + one.a[0][2] * vec.a[2];
+        ret.a[1] = one.a[1][0] * vec.a[0] + one.a[1][1] * vec.a[1] + one.a[1][2] * vec.a[2];
+        ret.a[2] = one.a[2][0] * vec.a[0] + one.a[2][1] * vec.a[1] + one.a[2][2] * vec.a[2];
+
+        return ret;
+    }
+}
+
+///problems with current design
+///arbitrary rgb -> xyz -> arbitrary rgb could be expressed as 1 matrix, but we have no way to express that. This is why folks uses connector objects
 namespace color
 {
     struct basic_color_space
@@ -417,6 +528,38 @@ namespace color
 
     };
 
+    struct chromaticity
+    {
+        float x = 0;
+        float y = 0;
+    };
+
+    namespace illuminant
+    {
+        namespace CIE1931
+        {
+            static constexpr chromaticity D65{0.31271, 0.32902};
+        }
+
+        namespace CIE1964
+        {
+            static constexpr chromaticity D65{0.31382, 0.33100};
+        }
+    }
+
+    struct basic_generic_RGB_tag
+    {
+
+    };
+
+    struct sRGB_parameters
+    {
+        static constexpr chromaticity R{0.64, 0.33};
+        static constexpr chromaticity G{0.30, 0.60};
+        static constexpr chromaticity B{0.15, 0.06};
+        static constexpr chromaticity W = illuminant::CIE1931::D65;
+    };
+
     ///eg sRGB
     struct static_color_space : basic_color_space
     {
@@ -424,12 +567,19 @@ namespace color
     };
 
     ///something that might need profiles, runtime information
+    template<typename T>
     struct dynamic_color_space : basic_color_space
+    {
+        T& dynamic_data;
+    };
+
+    template<typename T>
+    struct generic_RGB_space : T, basic_generic_RGB_tag, static_color_space
     {
 
     };
 
-    struct sRGB_space : static_color_space
+    struct sRGB_space : generic_RGB_space<sRGB_parameters>
     {
 
     };
