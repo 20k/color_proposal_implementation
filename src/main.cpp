@@ -40,6 +40,24 @@ int main()
     #endif // 0
 
     color::sRGB_uint8 val;
+    val.r = 255;
+    val.g = 127;
+    val.b = 80;
+
+    color::sRGB_float val2;
+
+    ///performs a model conversion
+    color::convert(val, val2);
+
+
+    color::sRGB_uint8 val3;
+    val3.r = 255;
+    val3.g = 127;
+    val3.b = 80;
+
+    color::XYZ test_xyz;
+
+    color::convert(val3, test_xyz);
 
     //color::basic_color<dummy> hello;
 

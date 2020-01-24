@@ -466,7 +466,7 @@ namespace color
         using model = cmodel;
     };
 
-    struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
+    /*struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
     {
 
     };
@@ -479,7 +479,11 @@ namespace color
     struct XYZ : basic_color<XYZ_space, XYZ_model>
     {
 
-    };
+    };*/
+
+    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
+    using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
+    using XYZ = basic_color<XYZ_space, XYZ_model>;
 
     inline
     float gamma_sRGB_to_linear(float in)
@@ -546,26 +550,48 @@ namespace color
         return color_convert(f, out);
     }
 
+    template<typename T, typename U, typename = void>
+    struct has_direct_conversion_c : std::false_type{};
+
+    template<typename T, typename U>
+    struct has_direct_conversion_c<T, U, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>()))>> : std::true_type{};
+
+    template<typename T, typename U>
+    constexpr bool has_optimised_conversion(const T& one, const U& two)
+    {
+        return has_direct_conversion_c<T, U>::value;
+    }
+
     template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2>
     inline
     void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
+        constexpr bool same_tags = (std::is_same_v<tags_1, tags_2> && ...);
 
-        if constexpr(same_space && same_model)
+        if constexpr(same_space && same_model && same_tags)
         {
             out = in;
             return;
         }
 
-        if constexpr(same_space && !same_model)
+        if constexpr(same_space && !same_model && same_tags)
         {
             return model_convert(in, out);
         }
         else
         {
-            ///different space, may have different model
+            if constexpr(has_optimised_conversion(in, out))
+            {
+                color_convert(in, out);
+            }
+            else
+            {
+                XYZ intermediate;
+                color_convert(in, intermediate);
+                color_convert(intermediate, in);
+            }
         }
     }
 }
