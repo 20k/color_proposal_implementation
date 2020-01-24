@@ -412,6 +412,11 @@ namespace color
 
     };
 
+    struct basic_alpha
+    {
+
+    };
+
     ///eg sRGB
     struct static_color_space : basic_color_space
     {
@@ -459,6 +464,17 @@ namespace color
 
     };
 
+    struct no_alpha : basic_alpha{};
+
+    template<typename T>
+    struct simple_alpha : basic_alpha
+    {
+        T alpha = 0;
+    };
+
+    struct float_alpha : simple_alpha<float>{};
+    struct uint8_alpha : simple_alpha<uint8_t>{};;
+
     template<typename cspace, typename cmodel, typename... tags>
     struct basic_color : cmodel, tags...
     {
@@ -466,24 +482,12 @@ namespace color
         using model = cmodel;
     };
 
-    /*struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
-    {
+    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model, no_alpha>;
+    using sRGB_float = basic_color<sRGB_space, RGB_float_model, no_alpha>;
+    using XYZ = basic_color<XYZ_space, XYZ_model, no_alpha>;
 
-    };
-
-    struct sRGB_float : basic_color<sRGB_space, RGB_float_model>
-    {
-
-    };
-
-    struct XYZ : basic_color<XYZ_space, XYZ_model>
-    {
-
-    };*/
-
-    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
-    using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
-    using XYZ = basic_color<XYZ_space, XYZ_model>;
+    using sRGBA_uint8 = basic_color<sRGB_space, RGB_uint8_model, uint8_alpha>;
+    using sRGBA_float = basic_color<sRGB_space, RGB_float_model, float_alpha>;
 
     inline
     float gamma_sRGB_to_linear(float in)
@@ -492,7 +496,6 @@ namespace color
             return in / 12.92f;
         else
             return std::pow((in + 0.055f) / 1.055f, 2.4f);
-
     }
 
     inline
@@ -543,11 +546,44 @@ namespace color
     }
 
     inline
+    void color_convert(const XYZ& in, sRGB_float& out)
+    {
+        float lin_r =  3.2404542 * in.X - 1.5371385 * in.Y - 0.4985314 * in.Z;
+        float lin_g = -0.9692660 * in.X + 1.8760108 * in.Y + 0.0415560 * in.Z;
+        float lin_b =  0.0556434 * in.X - 0.2040259 * in.Y + 1.0572252 * in.Z;
+
+        out.r = linear_sRGB_to_gamma(lin_r);
+        out.g = linear_sRGB_to_gamma(lin_g);
+        out.b = linear_sRGB_to_gamma(lin_b);
+    }
+
+    inline
     void color_convert(const sRGB_uint8& in, XYZ& out)
     {
         sRGB_float f;
         model_convert(in, f);
         return color_convert(f, out);
+    }
+
+    inline
+    void color_convert(const XYZ& in, sRGB_uint8& out)
+    {
+        sRGB_float fout;
+        model_convert(out, fout);
+        color_convert(in, fout);
+        model_convert(fout, out);
+    }
+
+    inline
+    void alpha_convert(const uint8_alpha& in, float_alpha& out)
+    {
+        out.alpha = in.alpha / 255.f;
+    }
+
+    inline
+    void alpha_convert(const float_alpha& in, uint8_alpha& out)
+    {
+        out.alpha = in.alpha * 255.f;
     }
 
     template<typename T, typename U, typename = void>
@@ -562,23 +598,40 @@ namespace color
         return has_direct_conversion_c<T, U>::value;
     }
 
-    template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2>
+    template<typename space_1, typename model_1, typename alpha_1, typename... tags_1, typename space_2, typename model_2, typename alpha_2, typename... tags_2>
     inline
-    void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
+    void convert(const basic_color<space_1, model_1, alpha_1, tags_1...>& in, basic_color<space_2, model_2, alpha_2, tags_2...>& out)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
+        constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
         constexpr bool same_tags = (std::is_same_v<tags_1, tags_2> && ...);
 
-        if constexpr(same_space && same_model && same_tags)
+        if constexpr(same_space && same_model && same_tags && same_alpha)
         {
             out = in;
             return;
         }
 
-        if constexpr(same_space && !same_model && same_tags)
+        if constexpr(same_space && same_tags)
         {
-            return model_convert(in, out);
+            const model_1& base_model = in;
+            model_2& destination_model = out;
+
+            if constexpr(!same_model)
+                model_convert(base_model, destination_model);
+            else
+                destination_model = base_model;
+
+            const alpha_1& base_alpha = in;
+            alpha_2& destination_alpha = out;
+
+            if constexpr(!same_alpha)
+                alpha_convert(base_alpha, destination_alpha);
+            else
+                destination_alpha = base_alpha;
+
+            return;
         }
         else
         {

@@ -49,15 +49,36 @@ int main()
     ///performs a model conversion
     color::convert(val, val2);
 
+    {
+        color::sRGB_uint8 val3;
+        val3.r = 255;
+        val3.g = 127;
+        val3.b = 80;
 
-    color::sRGB_uint8 val3;
-    val3.r = 255;
-    val3.g = 127;
-    val3.b = 80;
+        color::XYZ test_xyz;
 
-    color::XYZ test_xyz;
+        color::convert(val3, test_xyz);
 
-    color::convert(val3, test_xyz);
+        color::sRGB_float val4;
+
+        color::convert(test_xyz, val4);
+
+        std::cout << "Roundtrip " << val4.r << " " << val4.g << " " << val4.b << std::endl;
+    }
+
+    {
+        color::sRGBA_uint8 t1;
+        t1.r = 255;
+        t1.g = 127;
+        t1.b = 80;
+        t1.alpha = 230;
+
+        color::sRGBA_float t2;
+
+        color::convert(t1, t2);
+
+        std::cout << "t2 " << t2.r << " " << t2.g << " " << t2.b << " " << t2.alpha << std::endl;
+    }
 
     //color::basic_color<dummy> hello;
 
