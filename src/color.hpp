@@ -203,6 +203,7 @@ namespace color
 }
 #endif // SECOND_DESIGN
 
+#ifdef THIRD_DESIGN
 namespace color
 {
     template<typename space>
@@ -397,6 +398,65 @@ namespace color
         }
     }
 }
+#endif // THIRD_DESIGN
 
+namespace color
+{
+    struct basic_color_space
+    {
+
+    };
+
+    struct basic_color_model
+    {
+
+    };
+
+    ///eg sRGB
+    struct static_color_space : basic_color_space
+    {
+
+    };
+
+    ///something that might need profiles, runtime information
+    struct dynamic_color_space : basic_color_space
+    {
+
+    };
+
+    struct sRGB_space : static_color_space
+    {
+
+    };
+
+    template<typename T>
+    struct RGB_model : basic_color_model
+    {
+        T r = 0;
+        T g = 0;
+        T b = 0;
+    };
+
+    struct RGB_uint8_model : RGB_model<uint8_t>
+    {
+
+    };
+
+    struct RGB_float_model : RGB_model<float>
+    {
+
+    };
+
+    template<typename cspace, typename... T>
+    struct basic_color : T...
+    {
+        using space = cspace;
+    };
+
+    struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
+    {
+
+    };
+}
 
 #endif // COLOR_HPP_INCLUDED
