@@ -552,33 +552,6 @@ namespace color
 
     };
 
-    struct sRGB_parameters
-    {
-        static constexpr chromaticity R{0.64, 0.33};
-        static constexpr chromaticity G{0.30, 0.60};
-        static constexpr chromaticity B{0.15, 0.06};
-        static constexpr chromaticity W = illuminant::CIE1931::D65;
-    };
-
-    ///eg sRGB
-    struct static_color_space : basic_color_space
-    {
-
-    };
-
-    ///something that might need profiles, runtime information
-    template<typename T>
-    struct dynamic_color_space : basic_color_space
-    {
-        T& dynamic_data;
-    };
-
-    template<typename T>
-    struct generic_RGB_space : T, basic_generic_RGB_tag, static_color_space
-    {
-
-    };
-
     constexpr temporary::matrix_3x3 get_XYZ_to_linear_RGB(chromaticity R, chromaticity G, chromaticity B, chromaticity W)
     {
         float xr=0, yr=0, zr=0, xg=0, yg=0, zg=0, xb=0, yb=0, zb=0;
@@ -611,6 +584,35 @@ namespace color
     {
         return get_XYZ_to_linear_RGB(R, G, B, W).invert();
     }
+
+    struct sRGB_parameters
+    {
+        static constexpr chromaticity R{0.64, 0.33};
+        static constexpr chromaticity G{0.30, 0.60};
+        static constexpr chromaticity B{0.15, 0.06};
+        static constexpr chromaticity W = illuminant::CIE1931::D65;
+
+        static constexpr temporary::matrix_3x3 linear_to_XYZ = get_linear_RGB_to_XYZ(R, G, B, W);
+    };
+
+    ///eg sRGB
+    struct static_color_space : basic_color_space
+    {
+
+    };
+
+    ///something that might need profiles, runtime information
+    template<typename T>
+    struct dynamic_color_space : basic_color_space
+    {
+        T& dynamic_data;
+    };
+
+    template<typename T>
+    struct generic_RGB_space : T, basic_generic_RGB_tag, static_color_space
+    {
+
+    };
 
     struct sRGB_space : generic_RGB_space<sRGB_parameters>
     {
@@ -708,6 +710,21 @@ namespace color
         out.b = in.b * 255.f;
     }
 
+    template<typename C1, typename C2>
+    inline
+    constexpr void color_convert(const generic_RGB_space<C1>& one, const generic_RGB_space<C2>& two)
+    {
+        /*using params = sRGB_float::space_type::RGB_parameters;
+
+        constexpr temporary::matrix_3x3 mat = get_linear_RGB_to_XYZ(params::R, params::G, params::B, params::W);
+
+        auto vec = temporary::multiply(mat, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+
+        float X = vec.a[0];
+        float Y = vec.a[1];
+        float Z = vec.a[2];*/
+    }
+
     inline
     void color_convert(const sRGB_float& in, XYZ& out)
     {
@@ -719,19 +736,9 @@ namespace color
         float lin_g = gamma_sRGB_to_linear(fg);
         float lin_b = gamma_sRGB_to_linear(fb);
 
-        /*float X = 0.4124564 * lin_r + 0.3575761 * lin_g + 0.1804375 * lin_b;
-        float Y = 0.2126729 * lin_r + 0.7151522 * lin_g + 0.0721750 * lin_b;
-        float Z = 0.0193339 * lin_r + 0.1191920 * lin_g + 0.9503041 * lin_b;*/
-
-        using params = sRGB_float::space_type::RGB_parameters;
-
-        constexpr temporary::matrix_3x3 mat = get_linear_RGB_to_XYZ(params::R, params::G, params::B, params::W);
-
-        auto vec = temporary::multiply(mat, (temporary::vector_1x3){lin_r, lin_g, lin_b});
-
-        float X = vec.a[0];
-        float Y = vec.a[1];
-        float Z = vec.a[2];
+        float X = 0.4124564f * lin_r + 0.3575761f * lin_g + 0.1804375f * lin_b;
+        float Y = 0.2126729f * lin_r + 0.7151522f * lin_g + 0.0721750f * lin_b;
+        float Z = 0.0193339f * lin_r + 0.1191920f * lin_g + 0.9503041f * lin_b;
 
         ///todo: constructors
         out.X = X;
@@ -742,9 +749,9 @@ namespace color
     inline
     void color_convert(const XYZ& in, sRGB_float& out)
     {
-        float lin_r =  3.2404542 * in.X - 1.5371385 * in.Y - 0.4985314 * in.Z;
-        float lin_g = -0.9692660 * in.X + 1.8760108 * in.Y + 0.0415560 * in.Z;
-        float lin_b =  0.0556434 * in.X - 0.2040259 * in.Y + 1.0572252 * in.Z;
+        float lin_r =  3.2404542f * in.X - 1.5371385f * in.Y - 0.4985314f * in.Z;
+        float lin_g = -0.9692660f * in.X + 1.8760108f * in.Y + 0.0415560f * in.Z;
+        float lin_b =  0.0556434f * in.X - 0.2040259f * in.Y + 1.0572252f * in.Z;
 
         out.r = linear_sRGB_to_gamma(lin_r);
         out.g = linear_sRGB_to_gamma(lin_g);
