@@ -475,11 +475,12 @@ namespace color
     struct float_alpha : simple_alpha<float>{};
     struct uint8_alpha : simple_alpha<uint8_t>{};;
 
-    template<typename cspace, typename cmodel, typename... tags>
-    struct basic_color : cmodel, tags...
+    template<typename cspace, typename cmodel, typename calpha, typename... tags>
+    struct basic_color : cmodel, calpha, tags...
     {
-        using space = cspace;
-        using model = cmodel;
+        using space_type = cspace;
+        using model_type = cmodel;
+        using alpha_type = calpha;
     };
 
     using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model, no_alpha>;
