@@ -406,9 +406,9 @@ namespace temporary
     {
         float a[3][3] = {0};
 
-        float determinant()
+        constexpr float determinant()
         {
-            float a11, a12, a13, a21, a22, a23, a31, a32, a33;
+            float a11=0, a12=0, a13=0, a21=0, a22=0, a23=0, a31=0, a32=0, a33=0;
 
             a11 = a[0][0];
             a12 = a[0][1];
@@ -425,11 +425,11 @@ namespace temporary
             return a11*a22*a33 + a21*a32*a13 + a31*a12*a23 - a11*a32*a23 - a31*a22*a13 - a21*a12*a33;
         }
 
-        matrix_3x3 invert()
+        constexpr matrix_3x3 invert()
         {
-            float d = determinant();
+            float id = 1.f/determinant();
 
-            float a11, a12, a13, a21, a22, a23, a31, a32, a33;
+            float a11=0, a12=0, a13=0, a21=0, a22=0, a23=0, a31=0, a32=0, a33=0;
 
             a11 = a[0][0];
             a12 = a[0][1];
@@ -455,23 +455,23 @@ namespace temporary
             float b1 = a12 * a31 - a11 * a32;
             float b2 = a11 * a22 - a12 * a21;
 
-            t0 *= d;
-            t1 *= d;
-            t2 *= d;
+            t0 *= id;
+            t1 *= id;
+            t2 *= id;
 
-            m0 *= d;
-            m1 *= d;
-            m2 *= d;
+            m0 *= id;
+            m1 *= id;
+            m2 *= id;
 
-            b0 *= d;
-            b1 *= d;
-            b2 *= d;
+            b0 *= id;
+            b1 *= id;
+            b2 *= id;
 
             return {{{t0, t1, t2}, {m0, m1, m2}, {b0, b1, b2}}};
         }
     };
 
-    matrix_3x3 multiply(const matrix_3x3& one, const matrix_3x3& two)
+    constexpr matrix_3x3 multiply(const matrix_3x3& one, const matrix_3x3& two)
     {
         matrix_3x3 ret;
 
@@ -498,7 +498,7 @@ namespace temporary
         float a[3] = {0};
     };
 
-    vector_1x3 multiply(const matrix_3x3& one, const vector_1x3& vec)
+    constexpr vector_1x3 multiply(const matrix_3x3& one, const vector_1x3& vec)
     {
         vector_1x3 ret;
         ret.a[0] = one.a[0][0] * vec.a[0] + one.a[0][1] * vec.a[1] + one.a[0][2] * vec.a[2];
@@ -579,9 +579,42 @@ namespace color
 
     };
 
+    constexpr temporary::matrix_3x3 get_XYZ_to_linear_RGB(chromaticity R, chromaticity G, chromaticity B, chromaticity W)
+    {
+        float xr=0, yr=0, zr=0, xg=0, yg=0, zg=0, xb=0, yb=0, zb=0;
+        float xw=0, yw=0, zw=0;
+        float rx=0, ry=0, rz=0, gx=0, gy=0, gz=0, bx=0, by=0, bz=0;
+        float rw=0, gw=0, bw=0;
+
+        xr = R.x;  yr = R.y;  zr = 1 - (xr + yr);
+        xg = G.x;  yg = G.y;  zg = 1 - (xg + yg);
+        xb = B.x;  yb = B.y;  zb = 1 - (xb + yb);
+
+        xw = W.x;  yw = W.y;  zw = 1 - (xw + yw);
+
+        rx = (yg * zb) - (yb * zg);  ry = (xb * zg) - (xg * zb);  rz = (xg * yb) - (xb * yg);
+        gx = (yb * zr) - (yr * zb);  gy = (xr * zb) - (xb * zr);  gz = (xb * yr) - (xr * yb);
+        bx = (yr * zg) - (yg * zr);  by = (xg * zr) - (xr * zg);  bz = (xr * yg) - (xg * yr);
+
+        rw = ((rx * xw) + (ry * yw) + (rz * zw)) / yw;
+        gw = ((gx * xw) + (gy * yw) + (gz * zw)) / yw;
+        bw = ((bx * xw) + (by * yw) + (bz * zw)) / yw;
+
+        rx = rx / rw;  ry = ry / rw;  rz = rz / rw;
+        gx = gx / gw;  gy = gy / gw;  gz = gz / gw;
+        bx = bx / bw;  by = by / bw;  bz = bz / bw;
+
+        return {{{rx, ry, rz}, {gx, gy, gz}, {bx, by, bz}}};
+    }
+
+    constexpr temporary::matrix_3x3 get_linear_RGB_to_XYZ(chromaticity R, chromaticity G, chromaticity B, chromaticity W)
+    {
+        return get_XYZ_to_linear_RGB(R, G, B, W).invert();
+    }
+
     struct sRGB_space : generic_RGB_space<sRGB_parameters>
     {
-
+        using RGB_parameters = sRGB_parameters;
     };
 
     struct XYZ_space : static_color_space
@@ -686,9 +719,19 @@ namespace color
         float lin_g = gamma_sRGB_to_linear(fg);
         float lin_b = gamma_sRGB_to_linear(fb);
 
-        float X = 0.4124564 * lin_r + 0.3575761 * lin_g + 0.1804375 * lin_b;
+        /*float X = 0.4124564 * lin_r + 0.3575761 * lin_g + 0.1804375 * lin_b;
         float Y = 0.2126729 * lin_r + 0.7151522 * lin_g + 0.0721750 * lin_b;
-        float Z = 0.0193339 * lin_r + 0.1191920 * lin_g + 0.9503041 * lin_b;
+        float Z = 0.0193339 * lin_r + 0.1191920 * lin_g + 0.9503041 * lin_b;*/
+
+        using params = sRGB_float::space_type::RGB_parameters;
+
+        constexpr temporary::matrix_3x3 mat = get_linear_RGB_to_XYZ(params::R, params::G, params::B, params::W);
+
+        auto vec = temporary::multiply(mat, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+
+        float X = vec.a[0];
+        float Y = vec.a[1];
+        float Z = vec.a[2];
 
         ///todo: constructors
         out.X = X;
