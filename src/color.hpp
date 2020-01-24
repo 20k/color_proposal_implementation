@@ -429,12 +429,24 @@ namespace color
 
     };
 
+    struct XYZ_space : static_color_space
+    {
+
+    };
+
     template<typename T>
     struct RGB_model : basic_color_model
     {
         T r = 0;
         T g = 0;
         T b = 0;
+    };
+
+    struct XYZ_model : basic_color_model
+    {
+        float X = 0;
+        float Y = 0;
+        float Z = 0;
     };
 
     struct RGB_uint8_model : RGB_model<uint8_t>
@@ -447,16 +459,115 @@ namespace color
 
     };
 
-    template<typename cspace, typename... T>
-    struct basic_color : T...
+    template<typename cspace, typename cmodel, typename... tags>
+    struct basic_color : cmodel, tags...
     {
         using space = cspace;
+        using model = cmodel;
     };
 
     struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
     {
 
     };
+
+    struct sRGB_float : basic_color<sRGB_space, RGB_float_model>
+    {
+
+    };
+
+    struct XYZ : basic_color<XYZ_space, XYZ_model>
+    {
+
+    };
+
+    inline
+    float gamma_sRGB_to_linear(float in)
+    {
+        if(in <= 0.04045f)
+            return in / 12.92f;
+        else
+            return std::pow((in + 0.055f) / 1.055f, 2.4f);
+
+    }
+
+    inline
+    float linear_sRGB_to_gamma(float in)
+    {
+        if(in <= 0.0031308f)
+            return in * 12.92f;
+        else
+            return 1.055f * std::pow(in, 1/2.4f) - 0.055f;
+    }
+
+    inline
+    void model_convert(const RGB_uint8_model& in, RGB_float_model& out)
+    {
+        out.r = in.r / 255.f;
+        out.g = in.g / 255.f;
+        out.b = in.b / 255.f;
+    }
+
+    inline
+    void model_convert(const RGB_float_model& in, RGB_uint8_model& out)
+    {
+        ///todo: clamp
+        out.r = in.r * 255.f;
+        out.g = in.g * 255.f;
+        out.b = in.b * 255.f;
+    }
+
+    inline
+    void color_convert(const sRGB_float& in, XYZ& out)
+    {
+        float fr = in.r;
+        float fg = in.g;
+        float fb = in.b;
+
+        float lin_r = gamma_sRGB_to_linear(fr);
+        float lin_g = gamma_sRGB_to_linear(fg);
+        float lin_b = gamma_sRGB_to_linear(fb);
+
+        float X = 0.4124564 * lin_r + 0.3575761 * lin_g + 0.1804375 * lin_b;
+        float Y = 0.2126729 * lin_r + 0.7151522 * lin_g + 0.0721750 * lin_b;
+        float Z = 0.0193339 * lin_r + 0.1191920 * lin_g + 0.9503041 * lin_b;
+
+        ///todo: constructors
+        out.X = X;
+        out.Y = Y;
+        out.Z = Z;
+    }
+
+    inline
+    void color_convert(const sRGB_uint8& in, XYZ& out)
+    {
+        sRGB_float f;
+        model_convert(in, f);
+        return color_convert(f, out);
+    }
+
+    template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2>
+    inline
+    void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
+    {
+        constexpr bool same_space = std::is_same_v<space_1, space_2>;
+        constexpr bool same_model = std::is_same_v<model_1, model_2>;
+
+        if constexpr(same_space && same_model)
+        {
+            out = in;
+            return;
+        }
+
+        if constexpr(same_space && !same_model)
+        {
+            return model_convert(in, out);
+        }
+        else
+        {
+            ///different space, may have different model
+        }
+    }
 }
 
 #endif // COLOR_HPP_INCLUDED
