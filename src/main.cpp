@@ -46,7 +46,7 @@ using P3_float = color::basic_color<P3_space, color::RGB_float_model, color::no_
 struct adobe_RGB_98_parameters
 {
     static constexpr color::chromaticity R{0.64, 0.33};
-    static constexpr color::chromaticity G{0.30, 0.60};
+    static constexpr color::chromaticity G{0.21, 0.71};
     static constexpr color::chromaticity B{0.15, 0.06};
     static constexpr color::chromaticity W = color::illuminant::CIE1931::D65;
 
