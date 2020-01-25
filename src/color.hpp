@@ -651,12 +651,12 @@ namespace color
 
     };
 
-    template<typename T>
+    template<typename T, typename U, typename V>
     struct RGB_model : basic_color_model
     {
-        T r = 0;
-        T g = 0;
-        T b = 0;
+        T r = T();
+        U g = U();
+        V b = V();
     };
 
     struct XYZ_model : basic_color_model
@@ -666,12 +666,12 @@ namespace color
         float Z = 0;
     };
 
-    struct RGB_uint8_model : RGB_model<uint8_t>
+    struct RGB_uint8_model : RGB_model<uint8_t, uint8_t, uint8_t>
     {
 
     };
 
-    struct RGB_float_model : RGB_model<float>
+    struct RGB_float_model : RGB_model<float, float, float>
     {
 
     };
