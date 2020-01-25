@@ -406,7 +406,7 @@ namespace temporary
     {
         float a[3][3] = {0};
 
-        constexpr float determinant()
+        constexpr float determinant() const
         {
             float a11=0, a12=0, a13=0, a21=0, a22=0, a23=0, a31=0, a32=0, a33=0;
 
@@ -425,7 +425,7 @@ namespace temporary
             return a11*a22*a33 + a21*a32*a13 + a31*a12*a23 - a11*a32*a23 - a31*a22*a13 - a21*a12*a33;
         }
 
-        constexpr matrix_3x3 invert()
+        constexpr matrix_3x3 invert() const
         {
             float id = 1.f/determinant();
 
@@ -592,8 +592,33 @@ namespace color
         static constexpr chromaticity B{0.15, 0.06};
         static constexpr chromaticity W = illuminant::CIE1931::D65;
 
+        static constexpr float transfer_alpha = 1.055;
+        static constexpr float transfer_beta = 0.0031308;
+        static constexpr float transfer_gamma = 12/5.f;
+        static constexpr float transfer_delta = 12.92;
+        static constexpr float transfer_bdelta = 0.04045;
+
         static constexpr temporary::matrix_3x3 linear_to_XYZ = get_linear_RGB_to_XYZ(R, G, B, W);
+        static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
     };
+
+    template<typename T>
+    inline constexpr float gamma_to_linear(float component, const T& in)
+    {
+        if(component <= in.transfer_bdelta)
+            return component / in.transfer_delta;
+        else
+            return std::pow((component + in.transfer_alpha - 1) / in.transfer_alpha, in.transfer_gamma);
+    }
+
+    template<typename T>
+    inline constexpr float linear_to_gamma(float component, const T& in)
+    {
+        if(component <= in.transfer_beta)
+            return component * in.transfer_delta;
+        else
+            return in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
+    }
 
     ///eg sRGB
     struct static_color_space : basic_color_space
@@ -676,24 +701,6 @@ namespace color
     using sRGBA_float = basic_color<sRGB_space, RGB_float_model, float_alpha>;
 
     inline
-    float gamma_sRGB_to_linear(float in)
-    {
-        if(in <= 0.04045f)
-            return in / 12.92f;
-        else
-            return std::pow((in + 0.055f) / 1.055f, 2.4f);
-    }
-
-    inline
-    float linear_sRGB_to_gamma(float in)
-    {
-        if(in <= 0.0031308f)
-            return in * 12.92f;
-        else
-            return 1.055f * std::pow(in, 1/2.4f) - 0.055f;
-    }
-
-    inline
     void model_convert(const RGB_uint8_model& in, RGB_float_model& out)
     {
         out.r = in.r / 255.f;
@@ -732,13 +739,21 @@ namespace color
         float fg = in.g;
         float fb = in.b;
 
-        float lin_r = gamma_sRGB_to_linear(fr);
-        float lin_g = gamma_sRGB_to_linear(fg);
-        float lin_b = gamma_sRGB_to_linear(fb);
+        using type = sRGB_float::space_type::RGB_parameters;
 
-        float X = 0.4124564f * lin_r + 0.3575761f * lin_g + 0.1804375f * lin_b;
+        float lin_r = gamma_to_linear(fr, type());
+        float lin_g = gamma_to_linear(fg, type());
+        float lin_b = gamma_to_linear(fb, type());
+
+        /*float X = 0.4124564f * lin_r + 0.3575761f * lin_g + 0.1804375f * lin_b;
         float Y = 0.2126729f * lin_r + 0.7151522f * lin_g + 0.0721750f * lin_b;
-        float Z = 0.0193339f * lin_r + 0.1191920f * lin_g + 0.9503041f * lin_b;
+        float Z = 0.0193339f * lin_r + 0.1191920f * lin_g + 0.9503041f * lin_b;*/
+
+        auto vec = temporary::multiply(type::linear_to_XYZ, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+
+        float X = vec.a[0];
+        float Y = vec.a[1];
+        float Z = vec.a[2];
 
         ///todo: constructors
         out.X = X;
@@ -749,13 +764,21 @@ namespace color
     inline
     void color_convert(const XYZ& in, sRGB_float& out)
     {
-        float lin_r =  3.2404542f * in.X - 1.5371385f * in.Y - 0.4985314f * in.Z;
-        float lin_g = -0.9692660f * in.X + 1.8760108f * in.Y + 0.0415560f * in.Z;
-        float lin_b =  0.0556434f * in.X - 0.2040259f * in.Y + 1.0572252f * in.Z;
+        using type = sRGB_float::space_type::RGB_parameters;
 
-        out.r = linear_sRGB_to_gamma(lin_r);
-        out.g = linear_sRGB_to_gamma(lin_g);
-        out.b = linear_sRGB_to_gamma(lin_b);
+        /*float lin_r =  3.2404542f * in.X - 1.5371385f * in.Y - 0.4985314f * in.Z;
+        float lin_g = -0.9692660f * in.X + 1.8760108f * in.Y + 0.0415560f * in.Z;
+        float lin_b =  0.0556434f * in.X - 0.2040259f * in.Y + 1.0572252f * in.Z;*/
+
+        auto vec = temporary::multiply(type::XYZ_to_linear, (temporary::vector_1x3){in.X, in.Y, in.Z});
+
+        float lin_r = vec.a[0];
+        float lin_g = vec.a[1];
+        float lin_b = vec.a[2];
+
+        out.r = linear_to_gamma(lin_r, type());
+        out.g = linear_to_gamma(lin_g, type());
+        out.b = linear_to_gamma(lin_b, type());
     }
 
     inline
