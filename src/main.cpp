@@ -23,6 +23,46 @@ void direct_convert(const custom_color& in, color::sRGB_float& test)
 }
 #endif // 0
 
+struct P3_parameters
+{
+    static constexpr color::chromaticity R{0.68, 0.32};
+    static constexpr color::chromaticity G{0.265, 0.69};
+    static constexpr color::chromaticity B{0.15, 0.06};
+    static constexpr color::chromaticity W = color::illuminant::CIE1931::D65;
+
+    static constexpr float transfer_alpha = 1.055;
+    static constexpr float transfer_beta = 0.0031308;
+    static constexpr float transfer_gamma = 12/5.f;
+    static constexpr float transfer_delta = 12.92;
+    static constexpr float transfer_bdelta = 0.04045;
+
+    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
+    static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+};
+
+using P3_space = color::generic_RGB_space<P3_parameters>;
+using P3_float = color::basic_color<P3_space, color::RGB_float_model, color::no_alpha>;
+
+struct adobe_RGB_98_parameters
+{
+    static constexpr color::chromaticity R{0.64, 0.33};
+    static constexpr color::chromaticity G{0.30, 0.60};
+    static constexpr color::chromaticity B{0.15, 0.06};
+    static constexpr color::chromaticity W = color::illuminant::CIE1931::D65;
+
+    static constexpr float transfer_alpha = 1;
+    static constexpr float transfer_beta = 0;
+    static constexpr float transfer_gamma = 563/256.f;
+    static constexpr float transfer_delta = 1;
+    static constexpr float transfer_bdelta = 0;
+
+    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
+    static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+};
+
+using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters>;
+using adobe_float = color::basic_color<adobe_space, color::RGB_float_model, color::no_alpha>;
+
 int main()
 {
     #if 0
@@ -78,6 +118,36 @@ int main()
         color::convert(t1, t2);
 
         std::cout << "t2 " << t2.r << " " << t2.g << " " << t2.b << " " << t2.alpha << std::endl;
+    }
+
+    {
+        color::sRGB_float t1;
+        t1.r = 0;
+        t1.g = 1;
+        t1.b = 0;
+
+        P3_float t2;
+
+        color::convert(t1, t2);
+
+        std::cout << "P3 " << t2.r << " " << t2.g << " " << t2.b << std::endl;
+
+        color::convert(t2, t1);
+
+        std::cout << "sRGB " << t1.r << " " << t1.g << " " << t1.b << std::endl;
+    }
+
+    {
+        color::sRGB_float t1;
+        t1.r = 0;
+        t1.g = 1;
+        t1.b = 0;
+
+        adobe_float t2;
+
+        color::convert(t1, t2);
+
+        std::cout << "adobe " << t2.r << " " << t2.g << " " << t2.b << std::endl;
     }
 
     //color::basic_color<dummy> hello;

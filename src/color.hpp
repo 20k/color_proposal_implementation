@@ -636,13 +636,15 @@ namespace color
     template<typename T>
     struct generic_RGB_space : T, basic_generic_RGB_tag, static_color_space
     {
-
+        using RGB_parameters = T;
     };
 
-    struct sRGB_space : generic_RGB_space<sRGB_parameters>
+    /*struct sRGB_space : generic_RGB_space<sRGB_parameters>
     {
-        using RGB_parameters = sRGB_parameters;
-    };
+
+    };*/
+
+    using sRGB_space = generic_RGB_space<sRGB_parameters>;
 
     struct XYZ_space : static_color_space
     {
@@ -717,19 +719,27 @@ namespace color
         out.b = in.b * 255.f;
     }
 
-    template<typename C1, typename C2>
+    template<typename space_1, typename common_model, typename common_alpha, typename space_2>
     inline
-    constexpr void color_convert(const generic_RGB_space<C1>& one, const generic_RGB_space<C2>& two)
+    void color_convert(const basic_color<generic_RGB_space<space_1>, common_model, common_alpha>& in, basic_color<generic_RGB_space<space_2>, common_model, common_alpha>& out)
     {
-        /*using params = sRGB_float::space_type::RGB_parameters;
+        using type_1 = space_1;
+        using type_2 = space_2;
 
-        constexpr temporary::matrix_3x3 mat = get_linear_RGB_to_XYZ(params::R, params::G, params::B, params::W);
+        float lin_r = gamma_to_linear(in.r, type_1());
+        float lin_g = gamma_to_linear(in.g, type_1());
+        float lin_b = gamma_to_linear(in.b, type_1());
 
-        auto vec = temporary::multiply(mat, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+        auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
 
-        float X = vec.a[0];
-        float Y = vec.a[1];
-        float Z = vec.a[2];*/
+        auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+
+        /*auto vec_1 = temporary::multiply(type_1::linear_to_XYZ, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+        auto vec = temporary::multiply(type_2::XYZ_to_linear, vec_1);*/
+
+        out.r = linear_to_gamma(vec.a[0], type_2());
+        out.g = linear_to_gamma(vec.a[1], type_2());
+        out.b = linear_to_gamma(vec.a[2], type_2());
     }
 
     inline
