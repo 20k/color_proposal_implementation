@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <cmath>
+#include <cfloat>
 
 #ifdef FIRST_DESIGN
 namespace color
@@ -675,6 +676,30 @@ namespace color
 
     };*/
 
+    struct normalised_float_value_model
+    {
+        using type = float;
+
+        static inline constexpr type min = 0;
+        static inline constexpr type max = 1;
+    };
+
+    struct uint8_value_model
+    {
+        using type = uint8_t;
+
+        static inline constexpr type min = 0;
+        static inline constexpr type max = 255;
+    };
+
+    struct unnormalised_float_value_model
+    {
+        using type = float;
+
+        static inline constexpr type min = -FLT_MAX;
+        static inline constexpr type max = FLT_MAX;
+    };
+
     using sRGB_space = generic_RGB_space<sRGB_parameters>;
     using linear_RGB_space = generic_RGB_space<linear_RGB_parameters>;
 
@@ -683,18 +708,24 @@ namespace color
 
     };
 
-    template<typename T>
+    template<typename VA>
     struct alpha_model
     {
-        T a = T();
+        typename VA::type a = typename VA::type();
+
+        using A_value = VA;
     };
 
-    template<typename T, typename U, typename V>
+    template<typename V1, typename V2, typename V3>
     struct RGB_model : basic_color_model
     {
-        T r = T();
-        U g = U();
-        V b = V();
+        typename V1::type r = typename V1::type();
+        typename V2::type g = typename V2::type();
+        typename V3::type b = typename V3::type();
+
+        using R_value = V1;
+        using G_value = V2;
+        using B_value = V3;
     };
 
     template<typename T, typename U, typename V, typename A>
@@ -710,22 +741,22 @@ namespace color
         float Z = 0;
     };
 
-    struct RGB_uint8_model : RGB_model<uint8_t, uint8_t, uint8_t>
+    struct RGB_uint8_model : RGB_model<uint8_value_model, uint8_value_model, uint8_value_model>
     {
 
     };
 
-    struct RGB_float_model : RGB_model<float, float, float>
+    struct RGB_float_model : RGB_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>
     {
 
     };
 
-    struct RGBA_uint8_model : RGBA_model<uint8_t, uint8_t, uint8_t, uint8_t>
+    struct RGBA_uint8_model : RGBA_model<uint8_value_model, uint8_value_model, uint8_value_model, uint8_value_model>
     {
 
     };
 
-    struct RGBA_float_model : RGBA_model<float, float, float, float>
+    struct RGBA_float_model : RGBA_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>
     {
 
     };
@@ -782,6 +813,11 @@ namespace color
         out.b = in.b * 255.f;
         out.a = in.a * 255.f;
     }
+
+    /*template<typename T1, typename U1, typename V1, typename Tr1, typename Ur1, typename Vr1,
+             typename T2, typename U2, typename V2, typename Tr2, typename Ur2, typename Vr2>
+    inline
+    void model_convert(const RGB_model<)*/
 
     ///direct conversion between two arbitrary rgb space
     template<typename space_1, typename common_model, typename space_2>
