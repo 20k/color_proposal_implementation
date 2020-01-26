@@ -680,24 +680,24 @@ namespace color
     {
         using type = float;
 
-        static inline constexpr type min = 0;
-        static inline constexpr type max = 1;
+        static inline constexpr float min = 0;
+        static inline constexpr float max = 1;
     };
 
     struct uint8_value_model
     {
         using type = uint8_t;
 
-        static inline constexpr type min = 0;
-        static inline constexpr type max = 255;
+        static inline constexpr float min = 0;
+        static inline constexpr float max = 255;
     };
 
     struct unnormalised_float_value_model
     {
         using type = float;
 
-        static inline constexpr type min = -FLT_MAX;
-        static inline constexpr type max = FLT_MAX;
+        static inline constexpr float min = -FLT_MAX;
+        static inline constexpr float max = FLT_MAX;
     };
 
     using sRGB_space = generic_RGB_space<sRGB_parameters>;
@@ -778,46 +778,38 @@ namespace color
     using linear_RGB_float = basic_color<linear_RGB_space, RGB_float_model>;
     using linear_RGBA_float = basic_color<linear_RGB_space, RGBA_float_model>;
 
-    inline
-    void model_convert(const RGB_uint8_model& in, RGB_float_model& out)
+    template<typename T1, typename T2>
+    void model_convert_member(const typename T1::type& in, typename T2::type& out)
     {
-        out.r = in.r / 255.f;
-        out.g = in.g / 255.f;
-        out.b = in.b / 255.f;
+        out = ((in - T1::min) / (T1::max - T1::min)) * (T2::max - T2::min) + T2::min;
+
+        if(out < T2::min)
+            out = T2::min;
+
+        if(out > T2::max)
+            out = T2::max;
     }
 
+    template<typename T1, typename U1, typename V1,
+             typename T2, typename U2, typename V2>
     inline
-    void model_convert(const RGB_float_model& in, RGB_uint8_model& out)
+    void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
     {
-        ///todo: clamp
-        out.r = in.r * 255.f;
-        out.g = in.g * 255.f;
-        out.b = in.b * 255.f;
+        model_convert_member<T1, T2>(in.r, out.r);
+        model_convert_member<U1, U2>(in.g, out.g);
+        model_convert_member<V1, V2>(in.b, out.b);
     }
 
+    template<typename T1, typename U1, typename V1, typename W1,
+             typename T2, typename U2, typename V2, typename W2>
     inline
-    void model_convert(const RGBA_uint8_model& in, RGBA_float_model& out)
+    void model_convert(const RGBA_model<T1, U1, V1, W1>& in, RGBA_model<T2, U2, V2, W2>& out)
     {
-        out.r = in.r / 255.f;
-        out.g = in.g / 255.f;
-        out.b = in.b / 255.f;
-        out.a = in.a / 255.f;
+        model_convert_member<T1, T2>(in.r, out.r);
+        model_convert_member<U1, U2>(in.g, out.g);
+        model_convert_member<V1, V2>(in.b, out.b);
+        model_convert_member<W1, W2>(in.a, out.a);
     }
-
-    inline
-    void model_convert(const RGBA_float_model& in, RGBA_uint8_model& out)
-    {
-        ///todo: clamp
-        out.r = in.r * 255.f;
-        out.g = in.g * 255.f;
-        out.b = in.b * 255.f;
-        out.a = in.a * 255.f;
-    }
-
-    /*template<typename T1, typename U1, typename V1, typename Tr1, typename Ur1, typename Vr1,
-             typename T2, typename U2, typename V2, typename Tr2, typename Ur2, typename Vr2>
-    inline
-    void model_convert(const RGB_model<)*/
 
     ///direct conversion between two arbitrary rgb space
     template<typename space_1, typename common_model, typename space_2>
