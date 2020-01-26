@@ -38,10 +38,12 @@ struct P3_parameters
 
     static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
     static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+
+    using gamma = color::transfer_function::default_parameterisation;
 };
 
 using P3_space = color::generic_RGB_space<P3_parameters>;
-using P3_float = color::basic_color<P3_space, color::RGB_float_model, color::no_alpha>;
+using P3_float = color::basic_color<P3_space, color::RGB_float_model>;
 
 struct adobe_RGB_98_parameters
 {
@@ -58,10 +60,12 @@ struct adobe_RGB_98_parameters
 
     static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
     static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+
+    using gamma = color::transfer_function::default_parameterisation;
 };
 
 using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters>;
-using adobe_float = color::basic_color<adobe_space, color::RGB_float_model, color::no_alpha>;
+using adobe_float = color::basic_color<adobe_space, color::RGB_float_model>;
 
 int main()
 {
@@ -97,9 +101,13 @@ int main()
 
         color::XYZ test_xyz;
 
+        static_assert(color::has_optimised_conversion(val3, test_xyz));
+
         color::convert(val3, test_xyz);
 
         color::sRGB_float val4;
+
+        static_assert(color::has_optimised_conversion(test_xyz, val4));
 
         color::convert(test_xyz, val4);
 
@@ -111,13 +119,13 @@ int main()
         t1.r = 255;
         t1.g = 127;
         t1.b = 80;
-        t1.alpha = 230;
+        t1.a = 230;
 
         color::sRGBA_float t2;
 
         color::convert(t1, t2);
 
-        std::cout << "t2 " << t2.r << " " << t2.g << " " << t2.b << " " << t2.alpha << std::endl;
+        std::cout << "t2 " << t2.r << " " << t2.g << " " << t2.b << " " << t2.a << std::endl;
     }
 
     {
@@ -127,6 +135,8 @@ int main()
         t1.b = 0;
 
         P3_float t2;
+
+        static_assert(color::has_optimised_conversion(t1, t2));
 
         color::convert(t1, t2);
 
@@ -145,9 +155,54 @@ int main()
 
         adobe_float t2;
 
+        static_assert(color::has_optimised_conversion(t1, t2));
+
         color::convert(t1, t2);
 
         std::cout << "adobe " << t2.r << " " << t2.g << " " << t2.b << std::endl;
+    }
+
+    {
+        adobe_float t1;
+        t1.r = 1;
+        t1.g = 0;
+        t1.b = 1;
+
+        color::XYZ t2;
+
+        static_assert(color::has_optimised_conversion(t1, t2));
+
+        color::convert(t1, t2);
+    }
+
+    {
+        color::linear_RGB_float lin;
+        lin.r = 1;
+        lin.g = 0;
+        lin.b = 1;
+
+        color::sRGB_float srgb;
+
+        static_assert(color::has_optimised_conversion(lin, srgb));
+
+        color::convert(lin, srgb);
+
+        std::cout << "CONVERTEDLIN " << srgb.r << " " << srgb.g << " " << srgb.b << std::endl;
+    }
+
+    {
+        color::linear_RGB_float lin;
+        lin.r = 1;
+        lin.g = 0;
+        lin.b = 1;
+
+        color::sRGB_uint8 srgb;
+
+        static_assert(color::has_optimised_conversion(lin, srgb));
+
+        color::convert(lin, srgb);
+
+        std::cout << "CONVERTEDLIN " << srgb.r << " " << srgb.g << " " << srgb.b << std::endl;
     }
 
     //color::basic_color<dummy> hello;

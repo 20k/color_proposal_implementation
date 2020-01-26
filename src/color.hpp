@@ -523,11 +523,6 @@ namespace color
 
     };
 
-    struct basic_alpha
-    {
-
-    };
-
     struct chromaticity
     {
         float x = 0;
@@ -585,6 +580,45 @@ namespace color
         return get_XYZ_to_linear_RGB(R, G, B, W).invert();
     }
 
+    namespace transfer_function
+    {
+        struct default_parameterisation
+        {
+            template<typename T, typename U>
+            static inline constexpr T gamma_to_linear(T component, const U& in)
+            {
+                if(component <= in.transfer_bdelta)
+                    return component / in.transfer_delta;
+                else
+                    return std::pow((component + in.transfer_alpha - 1) / in.transfer_alpha, in.transfer_gamma);
+            }
+
+            template<typename T, typename U>
+            static inline constexpr T linear_to_gamma(T component, const U& in)
+            {
+                if(component <= in.transfer_beta)
+                    return component * in.transfer_delta;
+                else
+                    return in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
+            }
+        };
+
+        struct none
+        {
+            template<typename T, typename U>
+            static inline constexpr T gamma_to_linear(T component, const U& in)
+            {
+                return component;
+            }
+
+            template<typename T, typename U>
+            static inline constexpr T linear_to_gamma(T component, const U& in)
+            {
+                return component;
+            }
+        };
+    }
+
     struct sRGB_parameters
     {
         static constexpr chromaticity R{0.64, 0.33};
@@ -600,25 +634,22 @@ namespace color
 
         static constexpr temporary::matrix_3x3 linear_to_XYZ = get_linear_RGB_to_XYZ(R, G, B, W);
         static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+
+        using gamma = transfer_function::default_parameterisation;
     };
 
-    template<typename T>
-    inline constexpr float gamma_to_linear(float component, const T& in)
+    struct linear_RGB_parameters
     {
-        if(component <= in.transfer_bdelta)
-            return component / in.transfer_delta;
-        else
-            return std::pow((component + in.transfer_alpha - 1) / in.transfer_alpha, in.transfer_gamma);
-    }
+        static constexpr chromaticity R{0.64, 0.33};
+        static constexpr chromaticity G{0.30, 0.60};
+        static constexpr chromaticity B{0.15, 0.06};
+        static constexpr chromaticity W = illuminant::CIE1931::D65;
 
-    template<typename T>
-    inline constexpr float linear_to_gamma(float component, const T& in)
-    {
-        if(component <= in.transfer_beta)
-            return component * in.transfer_delta;
-        else
-            return in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
-    }
+        static constexpr temporary::matrix_3x3 linear_to_XYZ = get_linear_RGB_to_XYZ(R, G, B, W);
+        static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+
+        using gamma = transfer_function::none;
+    };
 
     ///eg sRGB
     struct static_color_space : basic_color_space
@@ -645,10 +676,17 @@ namespace color
     };*/
 
     using sRGB_space = generic_RGB_space<sRGB_parameters>;
+    using linear_RGB_space = generic_RGB_space<linear_RGB_parameters>;
 
     struct XYZ_space : static_color_space
     {
 
+    };
+
+    template<typename T>
+    struct alpha_model
+    {
+        T a = T();
     };
 
     template<typename T, typename U, typename V>
@@ -657,6 +695,12 @@ namespace color
         T r = T();
         U g = U();
         V b = V();
+    };
+
+    template<typename T, typename U, typename V, typename A>
+    struct RGBA_model : RGB_model<T, U, V>, alpha_model<A>
+    {
+
     };
 
     struct XYZ_model : basic_color_model
@@ -676,31 +720,32 @@ namespace color
 
     };
 
-    struct no_alpha : basic_alpha{};
-
-    template<typename T>
-    struct simple_alpha : basic_alpha
+    struct RGBA_uint8_model : RGBA_model<uint8_t, uint8_t, uint8_t, uint8_t>
     {
-        T alpha = 0;
+
     };
 
-    struct float_alpha : simple_alpha<float>{};
-    struct uint8_alpha : simple_alpha<uint8_t>{};;
+    struct RGBA_float_model : RGBA_model<float, float, float, float>
+    {
 
-    template<typename cspace, typename cmodel, typename calpha, typename... tags>
-    struct basic_color : cmodel, calpha, tags...
+    };
+
+    template<typename cspace, typename cmodel, typename... tags>
+    struct basic_color : cmodel, tags...
     {
         using space_type = cspace;
         using model_type = cmodel;
-        using alpha_type = calpha;
     };
 
-    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model, no_alpha>;
-    using sRGB_float = basic_color<sRGB_space, RGB_float_model, no_alpha>;
-    using XYZ = basic_color<XYZ_space, XYZ_model, no_alpha>;
+    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
+    using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
+    using XYZ = basic_color<XYZ_space, XYZ_model>;
 
-    using sRGBA_uint8 = basic_color<sRGB_space, RGB_uint8_model, uint8_alpha>;
-    using sRGBA_float = basic_color<sRGB_space, RGB_float_model, float_alpha>;
+    using sRGBA_uint8 = basic_color<sRGB_space, RGBA_uint8_model>;
+    using sRGBA_float = basic_color<sRGB_space, RGBA_float_model>;
+
+    using linear_RGB_float = basic_color<linear_RGB_space, RGB_float_model>;
+    using linear_RGBA_float = basic_color<linear_RGB_space, RGBA_float_model>;
 
     inline
     void model_convert(const RGB_uint8_model& in, RGB_float_model& out)
@@ -719,16 +764,36 @@ namespace color
         out.b = in.b * 255.f;
     }
 
-    template<typename space_1, typename common_model, typename common_alpha, typename space_2>
     inline
-    void color_convert(const basic_color<generic_RGB_space<space_1>, common_model, common_alpha>& in, basic_color<generic_RGB_space<space_2>, common_model, common_alpha>& out)
+    void model_convert(const RGBA_uint8_model& in, RGBA_float_model& out)
+    {
+        out.r = in.r / 255.f;
+        out.g = in.g / 255.f;
+        out.b = in.b / 255.f;
+        out.a = in.a / 255.f;
+    }
+
+    inline
+    void model_convert(const RGBA_float_model& in, RGBA_uint8_model& out)
+    {
+        ///todo: clamp
+        out.r = in.r * 255.f;
+        out.g = in.g * 255.f;
+        out.b = in.b * 255.f;
+        out.a = in.a * 255.f;
+    }
+
+    ///direct conversion between two arbitrary rgb space
+    template<typename space_1, typename common_model, typename space_2>
+    inline
+    void color_convert(const basic_color<generic_RGB_space<space_1>, common_model>& in, basic_color<generic_RGB_space<space_2>, common_model>& out)
     {
         using type_1 = space_1;
         using type_2 = space_2;
 
-        float lin_r = gamma_to_linear(in.r, type_1());
-        float lin_g = gamma_to_linear(in.g, type_1());
-        float lin_b = gamma_to_linear(in.b, type_1());
+        auto lin_r = type_1::gamma::gamma_to_linear(in.r, type_1());
+        auto lin_g = type_1::gamma::gamma_to_linear(in.g, type_1());
+        auto lin_b = type_1::gamma::gamma_to_linear(in.b, type_1());
 
         auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
 
@@ -737,58 +802,46 @@ namespace color
         /*auto vec_1 = temporary::multiply(type_1::linear_to_XYZ, (temporary::vector_1x3){lin_r, lin_g, lin_b});
         auto vec = temporary::multiply(type_2::XYZ_to_linear, vec_1);*/
 
-        out.r = linear_to_gamma(vec.a[0], type_2());
-        out.g = linear_to_gamma(vec.a[1], type_2());
-        out.b = linear_to_gamma(vec.a[2], type_2());
+        out.r = type_2::gamma::linear_to_gamma(vec.a[0], type_2());
+        out.g = type_2::gamma::linear_to_gamma(vec.a[1], type_2());
+        out.b = type_2::gamma::linear_to_gamma(vec.a[2], type_2());
     }
 
+    ///generic RGB -> XYZ
+    template<typename space>
     inline
-    void color_convert(const sRGB_float& in, XYZ& out)
+    void color_convert(const basic_color<generic_RGB_space<space>, RGB_float_model>& in, XYZ& out)
     {
-        float fr = in.r;
-        float fg = in.g;
-        float fb = in.b;
+        using type = space;
 
-        using type = sRGB_float::space_type::RGB_parameters;
-
-        float lin_r = gamma_to_linear(fr, type());
-        float lin_g = gamma_to_linear(fg, type());
-        float lin_b = gamma_to_linear(fb, type());
-
-        /*float X = 0.4124564f * lin_r + 0.3575761f * lin_g + 0.1804375f * lin_b;
-        float Y = 0.2126729f * lin_r + 0.7151522f * lin_g + 0.0721750f * lin_b;
-        float Z = 0.0193339f * lin_r + 0.1191920f * lin_g + 0.9503041f * lin_b;*/
+        auto lin_r = type::gamma::gamma_to_linear(in.r, type());
+        auto lin_g = type::gamma::gamma_to_linear(in.g, type());
+        auto lin_b = type::gamma::gamma_to_linear(in.b, type());
 
         auto vec = temporary::multiply(type::linear_to_XYZ, (temporary::vector_1x3){lin_r, lin_g, lin_b});
 
-        float X = vec.a[0];
-        float Y = vec.a[1];
-        float Z = vec.a[2];
-
         ///todo: constructors
-        out.X = X;
-        out.Y = Y;
-        out.Z = Z;
+        out.X = vec.a[0];
+        out.Y = vec.a[1];
+        out.Z = vec.a[2];
     }
 
+    ///XYZ -> generic RGB
+    template<typename space>
     inline
-    void color_convert(const XYZ& in, sRGB_float& out)
+    void color_convert(const XYZ& in, basic_color<generic_RGB_space<space>, RGB_float_model>& out)
     {
-        using type = sRGB_float::space_type::RGB_parameters;
-
-        /*float lin_r =  3.2404542f * in.X - 1.5371385f * in.Y - 0.4985314f * in.Z;
-        float lin_g = -0.9692660f * in.X + 1.8760108f * in.Y + 0.0415560f * in.Z;
-        float lin_b =  0.0556434f * in.X - 0.2040259f * in.Y + 1.0572252f * in.Z;*/
+        using type = space;
 
         auto vec = temporary::multiply(type::XYZ_to_linear, (temporary::vector_1x3){in.X, in.Y, in.Z});
 
-        float lin_r = vec.a[0];
-        float lin_g = vec.a[1];
-        float lin_b = vec.a[2];
+        auto lin_r = vec.a[0];
+        auto lin_g = vec.a[1];
+        auto lin_b = vec.a[2];
 
-        out.r = linear_to_gamma(lin_r, type());
-        out.g = linear_to_gamma(lin_g, type());
-        out.b = linear_to_gamma(lin_b, type());
+        out.r = type::gamma::linear_to_gamma(lin_r, type());
+        out.g = type::gamma::linear_to_gamma(lin_g, type());
+        out.b = type::gamma::linear_to_gamma(lin_b, type());
     }
 
     inline
@@ -796,7 +849,7 @@ namespace color
     {
         sRGB_float f;
         model_convert(in, f);
-        return color_convert(f, out);
+        color_convert(f, out);
     }
 
     inline
@@ -808,7 +861,7 @@ namespace color
         model_convert(fout, out);
     }
 
-    inline
+    /*inline
     void alpha_convert(const uint8_alpha& in, float_alpha& out)
     {
         out.alpha = in.alpha / 255.f;
@@ -818,7 +871,7 @@ namespace color
     void alpha_convert(const float_alpha& in, uint8_alpha& out)
     {
         out.alpha = in.alpha * 255.f;
-    }
+    }*/
 
     template<typename T, typename U, typename = void>
     struct has_direct_conversion_c : std::false_type{};
@@ -832,16 +885,16 @@ namespace color
         return has_direct_conversion_c<T, U>::value;
     }
 
-    template<typename space_1, typename model_1, typename alpha_1, typename... tags_1, typename space_2, typename model_2, typename alpha_2, typename... tags_2>
+    template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2>
     inline
-    void convert(const basic_color<space_1, model_1, alpha_1, tags_1...>& in, basic_color<space_2, model_2, alpha_2, tags_2...>& out)
+    void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
-        constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
+        //constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
         constexpr bool same_tags = (std::is_same_v<tags_1, tags_2> && ...);
 
-        if constexpr(same_space && same_model && same_tags && same_alpha)
+        if constexpr(same_space && same_model && same_tags)
         {
             out = in;
             return;
@@ -857,13 +910,13 @@ namespace color
             else
                 destination_model = base_model;
 
-            const alpha_1& base_alpha = in;
+            /*const alpha_1& base_alpha = in;
             alpha_2& destination_alpha = out;
 
             if constexpr(!same_alpha)
                 alpha_convert(base_alpha, destination_alpha);
             else
-                destination_alpha = base_alpha;
+                destination_alpha = base_alpha;*/
 
             return;
         }
