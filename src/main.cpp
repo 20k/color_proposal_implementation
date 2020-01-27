@@ -67,6 +67,11 @@ struct adobe_RGB_98_parameters
 using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters>;
 using adobe_float = color::basic_color<adobe_space, color::RGB_float_model>;
 
+bool approx_equal(float v1, float v2)
+{
+    return fabs(v1 - v2) < 0.000001f;
+}
+
 int main()
 {
     #if 0
@@ -82,16 +87,6 @@ int main()
 
     std::cout << "fval " << fval.r << " " << fval.g << " " << fval.b << std::endl;
     #endif // 0
-
-    color::sRGB_uint8 val;
-    val.r = 255;
-    val.g = 127;
-    val.b = 80;
-
-    color::sRGB_float val2;
-
-    ///performs a model conversion
-    color::convert(val, val2);
 
     {
         color::sRGB_uint8 val3;
@@ -111,7 +106,9 @@ int main()
 
         color::convert(test_xyz, val4);
 
-        std::cout << "Roundtrip " << val4.r << " " << val4.g << " " << val4.b << std::endl;
+        assert(approx_equal(val4.r, 1));
+        assert(approx_equal(val4.g, 0.498039));
+        assert(approx_equal(val4.b, 0.313725));
     }
 
     {
@@ -125,7 +122,10 @@ int main()
 
         color::convert(t1, t2);
 
-        std::cout << "t2 " << t2.r << " " << t2.g << " " << t2.b << " " << t2.a << std::endl;
+        assert(approx_equal(t2.r, 1));
+        assert(approx_equal(t2.g, 0.498039));
+        assert(approx_equal(t2.b, 0.313726)); ///slightly different results to above due to imprecision
+        assert(approx_equal(t2.a, 0.901961));
     }
 
     {
@@ -140,11 +140,15 @@ int main()
 
         color::convert(t1, t2);
 
-        std::cout << "P3 " << t2.r << " " << t2.g << " " << t2.b << std::endl;
+        assert(approx_equal(t2.r, 0.458407));
+        assert(approx_equal(t2.g, 0.985265));
+        assert(approx_equal(t2.b, 0.29832));
 
         color::convert(t2, t1);
 
-        std::cout << "sRGB " << t1.r << " " << t1.g << " " << t1.b << std::endl;
+        assert(approx_equal(t1.r, 0));
+        assert(approx_equal(t1.g, 1));
+        assert(approx_equal(t1.b, 0));
     }
 
     {
@@ -159,7 +163,9 @@ int main()
 
         color::convert(t1, t2);
 
-        std::cout << "adobe " << t2.r << " " << t2.g << " " << t2.b << std::endl;
+        assert(approx_equal(t2.r, 0.564978));
+        assert(approx_equal(t2.g, 1));
+        assert(approx_equal(t2.b, 0.234443));
     }
 
     {
@@ -187,7 +193,9 @@ int main()
 
         color::convert(lin, srgb);
 
-        std::cout << "CONVERTEDLIN " << srgb.r << " " << srgb.g << " " << srgb.b << std::endl;
+        assert(approx_equal(srgb.r, 1));
+        assert(approx_equal(srgb.g, 0));
+        assert(approx_equal(srgb.b, 1));
     }
 
     {
@@ -202,7 +210,9 @@ int main()
 
         color::convert(lin, srgb);
 
-        std::cout << "CONVERTEDLIN " << (int)srgb.r << " " << (int)srgb.g << " " << (int)srgb.b << std::endl;
+        assert(approx_equal(srgb.r, 188));
+        assert(approx_equal(srgb.g, 255));
+        assert(approx_equal(srgb.b, 188));
     }
 
     //color::basic_color<dummy> hello;
