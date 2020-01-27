@@ -102,8 +102,9 @@ struct fully_custom_colorspace
     float value = 0;
     float value2 = 0;
 
-    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::sRGB_parameters::linear_to_XYZ;
-    static constexpr temporary::matrix_3x3 XYZ_to_linear = color::sRGB_parameters::XYZ_to_linear;
+    ///Not necessary, purely for testing purposes. Not an RGB colorspace!
+    static constexpr temporary::matrix_3x3 impl_linear_to_XYZ = color::sRGB_parameters::linear_to_XYZ;
+    static constexpr temporary::matrix_3x3 impl_XYZ_to_linear = color::sRGB_parameters::XYZ_to_linear;
 };
 
 struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::RGB_float_model>
@@ -111,6 +112,18 @@ struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::R
     constexpr fully_custom_color(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
     constexpr fully_custom_color(){}
 };
+
+template<typename space, typename model>
+void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>& in, fully_custom_color& out)
+{
+
+}
+
+template<typename space, typename model>
+void color_convert(fully_custom_color& out, const color::basic_color<color::XYZ_space, color::XYZ_model>& in)
+{
+
+}
 
 constexpr bool approx_equal(float v1, float v2)
 {

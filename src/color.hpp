@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <cmath>
 #include <cfloat>
+#include <tuple>
 
 #ifdef FIRST_DESIGN
 namespace color
@@ -1021,14 +1022,26 @@ namespace color
         }
     }
 
-    template<typename destination, typename source>
+    template<typename destination, typename source, typename... T>
     inline
-    constexpr destination convert(const source& in)
+    constexpr destination convert(const source& in, T&&... args)
     {
         destination out;
-        convert(in, out);
+        convert(in, out, std::forward<T>(args)...);
         return out;
     }
+
+    template<typename destination, typename source, typename... T>
+    struct connector
+    {
+        std::tuple<T...> custom_data;
+        constexpr connector(T&&... in) : custom_data(std::forward<T...>(custom_data)){}
+
+        constexpr destination convert(const source& in)
+        {
+            return std::apply(color::convert<source, destination, T...>, custom_data);
+        }
+    };
 }
 
 #endif // COLOR_HPP_INCLUDED
