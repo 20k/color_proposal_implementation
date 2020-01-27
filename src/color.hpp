@@ -585,13 +585,15 @@ namespace color
         if(std::is_integral_v<typename T2::type>)
             intermediate = round(intermediate);
 
-        out = intermediate;
+        //out = intermediate;
 
-        if(out < T2::min)
+        if(intermediate < T2::min)
             out = T2::min;
-
-        if(out > T2::max)
+        else if(intermediate > T2::max)
             out = T2::max;
+        else
+            out = intermediate;
+
     }
 
     struct normalised_float_value_model
