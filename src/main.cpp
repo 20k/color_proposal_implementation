@@ -128,11 +128,9 @@ void tests()
 
         constexpr color::linear_RGB_float linear = color::convert<color::linear_RGB_float>(i_dislike_type_safety);
 
-        printf("LB %f\n", linear.b);
-
         static_assert(approx_equal(linear.r, 1.f));
         static_assert(approx_equal(linear.g, 1.f));
-        //static_assert(approx_equal(linear.b, 0.5f));
+        static_assert(approx_equal(linear.b, (128/255.f)));
     }
 
     {
