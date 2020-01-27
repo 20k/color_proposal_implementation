@@ -99,8 +99,8 @@ struct weirdo_linear_space : color::basic_color<color::linear_RGB_space, weirdo_
 
 struct fully_custom_colorspace
 {
-    //float value = 0;
-    //float value2 = 0;
+    float value = 0;
+    float value2 = 0;
 
     ///Not necessary, purely for testing purposes. Not an RGB colorspace!
     static inline constexpr temporary::matrix_3x3 impl_linear_to_XYZ = color::sRGB_parameters::linear_to_XYZ;
@@ -113,14 +113,12 @@ struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::R
     constexpr fully_custom_color(){}
 };
 
-template<typename space, typename model>
-void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>& in, fully_custom_color& out, const fully_custom_colorspace& full)
+void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>& in, color::basic_color<fully_custom_colorspace, color::RGB_float_model>& out, fully_custom_colorspace& full)
 {
 
 }
 
-template<typename space, typename model>
-void color_convert(fully_custom_color& out, const color::basic_color<color::XYZ_space, color::XYZ_model>& in, const fully_custom_colorspace& full)
+void color_convert(const color::basic_color<fully_custom_colorspace, color::RGB_float_model>& in, color::basic_color<color::XYZ_space, color::XYZ_model>& out, fully_custom_colorspace& full)
 {
 
 }
@@ -170,7 +168,17 @@ void tests()
 
     {
         fully_custom_colorspace colour_instance;
+        colour_instance.value = 53;
+        colour_instance.value2 = 999;
+
+        fully_custom_color ccol;
+        ccol.r = 1;
+        ccol.g = 0;
+        ccol.b = 1;
+
         auto conn = color::make_connector<color::linear_RGB_float, fully_custom_color>(colour_instance);
+
+        color::linear_RGB_float converted = conn.convert(ccol);
     }
 
     {
@@ -180,13 +188,13 @@ void tests()
 
         static_assert(color::has_optimised_conversion(val3, test_xyz));
 
-        color::convert(val3, test_xyz);
+        color::convert_impl(val3, test_xyz);
 
         color::sRGB_float val4;
 
         static_assert(color::has_optimised_conversion(test_xyz, val4));
 
-        color::convert(test_xyz, val4);
+        color::convert_impl(test_xyz, val4);
 
         assert(approx_equal(val4.r, 1));
         assert(approx_equal(val4.g, 0.498039));
@@ -198,7 +206,7 @@ void tests()
 
         color::sRGBA_float t2;
 
-        color::convert(t1, t2);
+        color::convert_impl(t1, t2);
 
         assert(approx_equal(t2.r, 1));
         assert(approx_equal(t2.g, 0.498039));
@@ -213,13 +221,13 @@ void tests()
 
         static_assert(color::has_optimised_conversion(t1, t2));
 
-        color::convert(t1, t2);
+        color::convert_impl(t1, t2);
 
         assert(approx_equal(t2.r, 0.458407));
         assert(approx_equal(t2.g, 0.985265));
         assert(approx_equal(t2.b, 0.29832));
 
-        color::convert(t2, t1);
+        color::convert_impl(t2, t1);
 
         assert(approx_equal(t1.r, 0));
         assert(approx_equal(t1.g, 1));
@@ -233,7 +241,7 @@ void tests()
 
         static_assert(color::has_optimised_conversion(t1, t2));
 
-        color::convert(t1, t2);
+        color::convert_impl(t1, t2);
 
         assert(approx_equal(t2.r, 0.564978));
         assert(approx_equal(t2.g, 1));
@@ -247,7 +255,7 @@ void tests()
 
         static_assert(color::has_optimised_conversion(t1, t2));
 
-        color::convert(t1, t2);
+        color::convert_impl(t1, t2);
     }
 
     {
@@ -257,7 +265,7 @@ void tests()
 
         static_assert(color::has_optimised_conversion(lin, srgb));
 
-        color::convert(lin, srgb);
+        color::convert_impl(lin, srgb);
 
         assert(approx_equal(srgb.r, 1));
         assert(approx_equal(srgb.g, 0));
@@ -271,7 +279,7 @@ void tests()
 
         static_assert(color::has_optimised_conversion(lin, srgb));
 
-        color::convert(lin, srgb);
+        color::convert_impl(lin, srgb);
 
         assert(approx_equal(srgb.r, 188));
         assert(approx_equal(srgb.g, 255));

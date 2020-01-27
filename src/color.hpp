@@ -974,7 +974,7 @@ namespace color
     ///TODO: Conversions with alpha between different colour spaces do not work
     template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2, typename... Args>
     inline
-    constexpr void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out, Args&&... args)
+    constexpr void convert_impl(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out, Args&&... args)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
@@ -1027,7 +1027,7 @@ namespace color
     constexpr destination convert(const source& in, T&&... args)
     {
         destination out;
-        convert(in, out, std::forward<T>(args)...);
+        convert_impl(in, out, std::forward<T>(args)...);
         return out;
     }
 
@@ -1050,6 +1050,16 @@ namespace color
 
         template<typename... U>
         connector(U&&... in) : custom_data(std::forward<U>(in)...){}
+
+        constexpr destination convert(const source& in)
+        {
+            auto cvt = [&](auto&&... params)
+            {
+                return color::convert<destination, source, T...>(in, std::forward<decltype(params)>(params)...);
+            };
+
+            return std::apply(cvt, custom_data);
+        }
     };
 
     template<typename destination, typename source, typename... T>
