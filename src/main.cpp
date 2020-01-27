@@ -148,7 +148,7 @@ void tests()
     {
         constexpr color::sRGB_float t1(0, 1, 0);
 
-        static_assert(color::has_optimised_conversion(t1, P3_float()));
+        static_assert(color::has_optimised_conversion(color::sRGB_float(), P3_float()));
 
         constexpr P3_float t2 = color::convert<P3_float>(t1);
 

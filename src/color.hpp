@@ -594,6 +594,9 @@ namespace color
             out = intermediate;
     }
 
+    ///TODO: Min and max are used as scale, and clamping
+    ///which is not ideal. Eg we might want an hdr linear srgb type that's -1 -> 2
+    ///but unscaled from regular linear sRGB
     struct normalised_float_value_model
     {
         using type = float;
