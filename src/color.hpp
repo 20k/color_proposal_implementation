@@ -581,6 +581,48 @@ namespace color
         return get_XYZ_to_linear_RGB(R, G, B, W).invert();
     }
 
+    template<typename T1, typename T2>
+    inline
+    constexpr void model_convert_member(const typename T1::type& in, typename T2::type& out)
+    {
+        auto intermediate = ((in - T1::min) / (T1::max - T1::min)) * (T2::max - T2::min) + T2::min;
+
+        if(std::is_integral_v<typename T2::type>)
+            intermediate = round(intermediate);
+
+        out = intermediate;
+
+        if(out < T2::min)
+            out = T2::min;
+
+        if(out > T2::max)
+            out = T2::max;
+    }
+
+    struct normalised_float_value_model
+    {
+        using type = float;
+
+        static inline constexpr float min = 0;
+        static inline constexpr float max = 1;
+    };
+
+    struct uint8_value_model
+    {
+        using type = uint8_t;
+
+        static inline constexpr float min = 0;
+        static inline constexpr float max = 255;
+    };
+
+    struct unnormalised_float_value_model
+    {
+        using type = float;
+
+        static inline constexpr float min = -FLT_MAX;
+        static inline constexpr float max = FLT_MAX;
+    };
+
     namespace transfer_function
     {
         struct default_parameterisation
@@ -589,7 +631,9 @@ namespace color
             static inline constexpr
             float gamma_to_linear(typename value_model::type real_component, const U& in, value_model tag)
             {
-                float component = (real_component - value_model::min) / (value_model::max - value_model::min);
+                float component = 0;
+
+                model_convert_member<value_model, normalised_float_value_model>(real_component, component);
 
                 if(component <= in.transfer_bdelta)
                     return component / in.transfer_delta;
@@ -601,10 +645,18 @@ namespace color
             static inline constexpr
             typename value_model::type linear_to_gamma(float component, const U& in, value_model tag)
             {
+                float my_val = 0;
+
                 if(component <= in.transfer_beta)
-                    return (component * in.transfer_delta) * (value_model::max - value_model::min) + value_model::min;
+                    my_val = component * in.transfer_delta;
                 else
-                    return (in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1)) * (value_model::max - value_model::min) + value_model::min;
+                    my_val = in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
+
+                typename value_model::type val = typename value_model::type();
+
+                model_convert_member<normalised_float_value_model, value_model>(my_val, val);
+
+                return val;
             }
         };
 
@@ -679,30 +731,6 @@ namespace color
     {
 
     };*/
-
-    struct normalised_float_value_model
-    {
-        using type = float;
-
-        static inline constexpr float min = 0;
-        static inline constexpr float max = 1;
-    };
-
-    struct uint8_value_model
-    {
-        using type = uint8_t;
-
-        static inline constexpr float min = 0;
-        static inline constexpr float max = 255;
-    };
-
-    struct unnormalised_float_value_model
-    {
-        using type = float;
-
-        static inline constexpr float min = -FLT_MAX;
-        static inline constexpr float max = FLT_MAX;
-    };
 
     using sRGB_space = generic_RGB_space<sRGB_parameters>;
     using linear_RGB_space = generic_RGB_space<linear_RGB_parameters>;
@@ -782,19 +810,6 @@ namespace color
     using linear_RGB_float = basic_color<linear_RGB_space, RGB_float_model>;
     using linear_RGBA_float = basic_color<linear_RGB_space, RGBA_float_model>;
 
-    template<typename T1, typename T2>
-    inline
-    constexpr void model_convert_member(const typename T1::type& in, typename T2::type& out)
-    {
-        out = ((in - T1::min) / (T1::max - T1::min)) * (T2::max - T2::min) + T2::min;
-
-        if(out < T2::min)
-            out = T2::min;
-
-        if(out > T2::max)
-            out = T2::max;
-    }
-
     template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
@@ -831,6 +846,7 @@ namespace color
 
         auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
 
+        ///need to eliminate this if the only difference between two spaces is the transfer function
         auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
 
         /*auto vec_1 = temporary::multiply(type_1::linear_to_XYZ, (temporary::vector_1x3){lin_r, lin_g, lin_b});

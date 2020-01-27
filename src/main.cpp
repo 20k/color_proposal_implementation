@@ -190,11 +190,11 @@ int main()
         std::cout << "CONVERTEDLIN " << srgb.r << " " << srgb.g << " " << srgb.b << std::endl;
     }
 
-    /*{
+    {
         color::linear_RGB_float lin;
-        lin.r = 1;
-        lin.g = 0;
-        lin.b = 1;
+        lin.r = 0.5;
+        lin.g = 1;
+        lin.b = 0.5;
 
         color::sRGB_uint8 srgb;
 
@@ -202,8 +202,8 @@ int main()
 
         color::convert(lin, srgb);
 
-        std::cout << "CONVERTEDLIN " << srgb.r << " " << srgb.g << " " << srgb.b << std::endl;
-    }*/
+        std::cout << "CONVERTEDLIN " << (int)srgb.r << " " << (int)srgb.g << " " << (int)srgb.b << std::endl;
+    }
 
     //color::basic_color<dummy> hello;
 
