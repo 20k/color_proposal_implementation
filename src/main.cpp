@@ -131,6 +131,12 @@ void tests()
         static_assert(approx_equal(linear.r, 1.f));
         static_assert(approx_equal(linear.g, 1.f));
         static_assert(approx_equal(linear.b, (128/255.f)));
+
+        constexpr color::sRGB_uint8 srgb = color::convert<color::sRGB_uint8>(i_dislike_type_safety);
+
+        static_assert(approx_equal(srgb.r, 255));
+        static_assert(approx_equal(srgb.g, 255));
+        static_assert(approx_equal(srgb.b, 188));
     }
 
     {
