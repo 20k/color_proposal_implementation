@@ -846,18 +846,15 @@ namespace color
         using type_1 = space_1;
         using type_2 = space_2;
 
-        ///Lin is always floats
+        ///Lin currently is always floats
         auto lin_r = type_1::gamma::gamma_to_linear(in.r, type_1(), typename model_1::R_value());
         auto lin_g = type_1::gamma::gamma_to_linear(in.g, type_1(), typename model_1::G_value());
         auto lin_b = type_1::gamma::gamma_to_linear(in.b, type_1(), typename model_1::B_value());
 
         auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
 
-        ///need to eliminate this if the only difference between two spaces is the transfer function
+        ///Todo: need to eliminate this if the only difference between two spaces is the transfer function
         auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
-
-        /*auto vec_1 = temporary::multiply(type_1::linear_to_XYZ, (temporary::vector_1x3){lin_r, lin_g, lin_b});
-        auto vec = temporary::multiply(type_2::XYZ_to_linear, vec_1);*/
 
         out.r = type_2::gamma::linear_to_gamma(vec.a[0], type_2(), typename model_2::R_value());
         out.g = type_2::gamma::linear_to_gamma(vec.a[1], type_2(), typename model_2::G_value());
