@@ -634,6 +634,9 @@ namespace color
         connector<destination, source, T...> ret(std::forward<T>(args)...);
         return ret;
     }
+
+    ///TODO: reinterpret_color_space
+    ///Should ignore colour space, but not ignore colour model
 }
 
 #endif // COLOR_HPP_INCLUDED
