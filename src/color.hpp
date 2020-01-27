@@ -780,6 +780,9 @@ namespace color
         float X = 0;
         float Y = 0;
         float Z = 0;
+
+        constexpr XYZ_model(float _X, float _Y, float _Z){X = _X; Y = _Y; Z = _Z;}
+        constexpr XYZ_model(){}
     };
 
     struct RGB_uint8_model : RGB_model<uint8_value_model, uint8_value_model, uint8_value_model>
@@ -809,12 +812,31 @@ namespace color
         using model_type = cmodel;
     };
 
-    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
-    using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
+    struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
+    {
+        constexpr sRGB_uint8(uint8_t _r, uint8_t _g, uint8_t _b){r = _r; g = _g; b = _b;}
+        constexpr sRGB_uint8(){}
+    };
+
+    struct sRGB_float : basic_color<sRGB_space, RGB_float_model>
+    {
+        constexpr sRGB_float(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
+        constexpr sRGB_float(){}
+    };
+
     using XYZ = basic_color<XYZ_space, XYZ_model>;
 
-    using sRGBA_uint8 = basic_color<sRGB_space, RGBA_uint8_model>;
-    using sRGBA_float = basic_color<sRGB_space, RGBA_float_model>;
+    struct sRGBA_uint8 : basic_color<sRGB_space, RGBA_uint8_model>
+    {
+        constexpr sRGBA_uint8(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a){r = _r; g = _g; b = _b; a = _a;}
+        constexpr sRGBA_uint8(){}
+    };
+
+    struct sRGBA_float : basic_color<sRGB_space, RGBA_uint8_model>
+    {
+        constexpr sRGBA_float(float _r, float _g, float _b, float _a){r = _r; g = _g; b = _b; a = _a;}
+        constexpr sRGBA_float(){}
+    };
 
     using linear_RGB_float = basic_color<linear_RGB_space, RGB_float_model>;
     using linear_RGBA_float = basic_color<linear_RGB_space, RGBA_float_model>;

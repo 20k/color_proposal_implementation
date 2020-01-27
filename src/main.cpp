@@ -75,27 +75,10 @@ constexpr bool approx_equal(float v1, float v2)
         return (v1 - v2) < 0.000001f;
 }
 
-int main()
+constexpr void tests()
 {
-    #if 0
-    color::sRGB_uint8 val(255, 127, 80);
-    color::sRGB_float fval;
-    color::XYZ_float xyz_f(0, 0, 0);
-    custom_color custom;
-
-    color::convert(val, fval);
-
-    assert(color::has_optimised_conversion(fval, xyz_f));
-    assert(color::has_optimised_conversion(custom, fval));
-
-    std::cout << "fval " << fval.r << " " << fval.g << " " << fval.b << std::endl;
-    #endif // 0
-
     {
-        color::sRGB_uint8 val3;
-        val3.r = 255;
-        val3.g = 127;
-        val3.b = 80;
+        color::sRGB_uint8 val3(255, 127, 80);
 
         color::XYZ test_xyz;
 
@@ -217,6 +200,24 @@ int main()
         assert(approx_equal(srgb.g, 255));
         assert(approx_equal(srgb.b, 188));
     }
+}
+
+int main()
+{
+    #if 0
+    color::sRGB_uint8 val(255, 127, 80);
+    color::sRGB_float fval;
+    color::XYZ_float xyz_f(0, 0, 0);
+    custom_color custom;
+
+    color::convert(val, fval);
+
+    assert(color::has_optimised_conversion(fval, xyz_f));
+    assert(color::has_optimised_conversion(custom, fval));
+
+    std::cout << "fval " << fval.r << " " << fval.g << " " << fval.b << std::endl;
+    #endif // 0
+
 
     //color::basic_color<dummy> hello;
 
