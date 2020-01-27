@@ -767,6 +767,8 @@ namespace color
         using B_value = V3;
     };
 
+    ///Todo: Due to the way this is specified, it is too easy
+    ///To accidentally convert RGBA to RGB. Needs fixing
     template<typename T, typename U, typename V, typename A>
     struct RGBA_model : RGB_model<T, U, V>, alpha_model<A>
     {
