@@ -838,8 +838,17 @@ namespace color
         constexpr sRGBA_float(){}
     };
 
-    using linear_RGB_float = basic_color<linear_RGB_space, RGB_float_model>;
-    using linear_RGBA_float = basic_color<linear_RGB_space, RGBA_float_model>;
+    struct linear_RGB_float : basic_color<linear_RGB_space, RGB_float_model>
+    {
+        constexpr linear_RGB_float(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
+        constexpr linear_RGB_float(){}
+    };
+
+    struct linear_RGBA_float : basic_color<linear_RGB_space, RGBA_float_model>
+    {
+        constexpr linear_RGBA_float(float _r, float _g, float _b, float _a){r = _r; g = _g; b = _b; a = _a;}
+        constexpr linear_RGBA_float(){}
+    };
 
     template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
