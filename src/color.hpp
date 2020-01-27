@@ -969,6 +969,7 @@ namespace color
         return has_direct_conversion_c<T, U>::value;
     }
 
+    ///TODO: Conversions with alpha between different colour spaces do not work
     template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2>
     inline
     constexpr void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
