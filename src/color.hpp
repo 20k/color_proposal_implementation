@@ -585,15 +585,12 @@ namespace color
         if(std::is_integral_v<typename T2::type>)
             intermediate = round(intermediate);
 
-        //out = intermediate;
-
         if(intermediate < T2::min)
             out = T2::min;
         else if(intermediate > T2::max)
             out = T2::max;
         else
             out = intermediate;
-
     }
 
     struct normalised_float_value_model
@@ -660,15 +657,21 @@ namespace color
 
         struct none
         {
-            template<typename T, typename U, typename V>
-            static inline constexpr T gamma_to_linear(T component, const U& in, V tag)
+            template<typename value_model, typename U>
+            static inline constexpr
+            float gamma_to_linear(typename value_model::type real_component, const U& in, value_model tag)
             {
+                float component = 0;
+                model_convert_member<value_model, normalised_float_value_model>(real_component, component);
                 return component;
             }
 
-            template<typename T, typename U, typename V>
-            static inline constexpr T linear_to_gamma(T component, const U& in, V tag)
+            template<typename value_model, typename U>
+            static inline constexpr
+            typename value_model::type linear_to_gamma(float real_component, const U& in, value_model tag)
             {
+                typename value_model::type component = typename value_model::type();
+                model_convert_member<normalised_float_value_model, value_model>(real_component, component);
                 return component;
             }
         };
