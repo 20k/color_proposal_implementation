@@ -176,6 +176,10 @@ void tests()
         color::linear_RGB_float converted = conn.convert(ccol);
 
         printf("Found %f %f %f\n", converted.r, converted.g, converted.b);
+
+        color::linear_RGB_float converted2 = color::convert<color::linear_RGB_float>(ccol, colour_instance);
+
+        printf("Found2 %f %f %f\n", converted2.r, converted2.g, converted2.b);
     }
 
     {
