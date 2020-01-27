@@ -821,7 +821,7 @@ namespace color
         constexpr sRGBA_uint8(){}
     };
 
-    struct sRGBA_float : basic_color<sRGB_space, RGBA_uint8_model>
+    struct sRGBA_float : basic_color<sRGB_space, RGBA_float_model>
     {
         constexpr sRGBA_float(float _r, float _g, float _b, float _a){r = _r; g = _g; b = _b; a = _a;}
         constexpr sRGBA_float(){}

@@ -86,7 +86,7 @@ constexpr bool approx_equal(float v1, float v2)
         return (v1 - v2) < 0.000001f;
 }
 
-constexpr void tests()
+void tests()
 {
     {
         constexpr color::sRGB_float t1(0, 1, 0);
@@ -222,6 +222,7 @@ int main()
     std::cout << "fval " << fval.r << " " << fval.g << " " << fval.b << std::endl;
     #endif // 0
 
+    tests();
 
     //color::basic_color<dummy> hello;
 
