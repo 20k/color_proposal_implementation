@@ -185,17 +185,13 @@ void tests()
     {
         color::sRGB_uint8 val3(255, 127, 80);
 
-        color::XYZ test_xyz;
+        static_assert(color::has_optimised_conversion(val3, color::XYZ()));
 
-        static_assert(color::has_optimised_conversion(val3, test_xyz));
+        color::XYZ test_xyz = color::convert<color::XYZ>(val3);
 
-        color::convert_impl(val3, test_xyz);
+        static_assert(color::has_optimised_conversion(test_xyz, color::sRGB_float()));
 
-        color::sRGB_float val4;
-
-        static_assert(color::has_optimised_conversion(test_xyz, val4));
-
-        color::convert_impl(test_xyz, val4);
+        color::sRGB_float val4 = color::convert<color::sRGB_float>(test_xyz);
 
         assert(approx_equal(val4.r, 1));
         assert(approx_equal(val4.g, 0.498039));
@@ -205,9 +201,7 @@ void tests()
     {
         color::sRGBA_uint8 t1(255, 127, 80, 230);
 
-        color::sRGBA_float t2;
-
-        color::convert_impl(t1, t2);
+        color::sRGBA_float t2 = color::convert<color::sRGBA_float>(t1);
 
         assert(approx_equal(t2.r, 1));
         assert(approx_equal(t2.g, 0.498039));
@@ -218,17 +212,15 @@ void tests()
     {
         color::sRGB_float t1(0, 1, 0);
 
-        P3_float t2;
+        static_assert(color::has_optimised_conversion(t1, P3_float()));
 
-        static_assert(color::has_optimised_conversion(t1, t2));
-
-        color::convert_impl(t1, t2);
+        P3_float t2 = color::convert<P3_float>(t1);
 
         assert(approx_equal(t2.r, 0.458407));
         assert(approx_equal(t2.g, 0.985265));
         assert(approx_equal(t2.b, 0.29832));
 
-        color::convert_impl(t2, t1);
+        t1 = color::convert<color::sRGB_float>(t2);
 
         assert(approx_equal(t1.r, 0));
         assert(approx_equal(t1.g, 1));
@@ -238,11 +230,9 @@ void tests()
     {
         color::sRGB_float t1(0, 1, 0);
 
-        adobe_float t2;
+        static_assert(color::has_optimised_conversion(t1, adobe_float()));
 
-        static_assert(color::has_optimised_conversion(t1, t2));
-
-        color::convert_impl(t1, t2);
+        adobe_float t2 = color::convert<adobe_float>(t1);
 
         assert(approx_equal(t2.r, 0.564978));
         assert(approx_equal(t2.g, 1));
@@ -252,21 +242,17 @@ void tests()
     {
         adobe_float t1(1, 0, 1);
 
-        color::XYZ t2;
+        static_assert(color::has_optimised_conversion(t1, color::XYZ()));
 
-        static_assert(color::has_optimised_conversion(t1, t2));
-
-        color::convert_impl(t1, t2);
+        color::XYZ t2 = color::convert<color::XYZ>(t1);
     }
 
     {
         color::linear_RGB_float lin(1, 0, 1);
 
-        color::sRGB_float srgb;
+        static_assert(color::has_optimised_conversion(lin, color::sRGB_float()));
 
-        static_assert(color::has_optimised_conversion(lin, srgb));
-
-        color::convert_impl(lin, srgb);
+        color::sRGB_float srgb = color::convert<color::sRGB_float>(lin);
 
         assert(approx_equal(srgb.r, 1));
         assert(approx_equal(srgb.g, 0));
@@ -276,11 +262,9 @@ void tests()
     {
         color::linear_RGB_float lin(0.5, 1, 0.5);
 
-        color::sRGB_uint8 srgb;
+        static_assert(color::has_optimised_conversion(lin, color::sRGB_uint8()));
 
-        static_assert(color::has_optimised_conversion(lin, srgb));
-
-        color::convert_impl(lin, srgb);
+        color::sRGB_uint8 srgb = color::convert<color::sRGB_uint8>(lin);
 
         assert(approx_equal(srgb.r, 188));
         assert(approx_equal(srgb.g, 255));
