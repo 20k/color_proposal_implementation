@@ -587,8 +587,10 @@ namespace color
         {
             template<typename value_model, typename U>
             static inline constexpr
-            float gamma_to_linear(typename value_model::type component, const U& in, value_model tag)
+            float gamma_to_linear(typename value_model::type real_component, const U& in, value_model tag)
             {
+                float component = (real_component - value_model::min) / (value_model::max - value_model::min);
+
                 if(component <= in.transfer_bdelta)
                     return component / in.transfer_delta;
                 else
@@ -600,9 +602,9 @@ namespace color
             typename value_model::type linear_to_gamma(float component, const U& in, value_model tag)
             {
                 if(component <= in.transfer_beta)
-                    return component * in.transfer_delta;
+                    return (component * in.transfer_delta) * (value_model::max - value_model::min) + value_model::min;
                 else
-                    return in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
+                    return (in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1)) * (value_model::max - value_model::min) + value_model::min;
             }
         };
 
@@ -781,7 +783,8 @@ namespace color
     using linear_RGBA_float = basic_color<linear_RGB_space, RGBA_float_model>;
 
     template<typename T1, typename T2>
-    void model_convert_member(const typename T1::type& in, typename T2::type& out)
+    inline
+    constexpr void model_convert_member(const typename T1::type& in, typename T2::type& out)
     {
         out = ((in - T1::min) / (T1::max - T1::min)) * (T2::max - T2::min) + T2::min;
 
@@ -875,7 +878,7 @@ namespace color
         out.b = type::gamma::linear_to_gamma(lin_b, type(), typename model::B_value());
     }
 
-    inline
+    /*inline
     void color_convert(const sRGB_uint8& in, XYZ& out)
     {
         sRGB_float f;
@@ -890,7 +893,7 @@ namespace color
         model_convert(out, fout);
         color_convert(in, fout);
         model_convert(fout, out);
-    }
+    }*/
 
     /*inline
     void alpha_convert(const uint8_alpha& in, float_alpha& out)
