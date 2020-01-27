@@ -89,6 +89,18 @@ constexpr bool approx_equal(float v1, float v2)
 constexpr void tests()
 {
     {
+        constexpr color::sRGB_float t1(0, 1, 0);
+
+        static_assert(color::has_optimised_conversion(t1, P3_float()));
+
+        constexpr P3_float t2 = color::convert<P3_float>(t1);
+
+        static_assert(approx_equal(t2.r, 0.458407));
+        static_assert(approx_equal(t2.g, 0.985265));
+        static_assert(approx_equal(t2.b, 0.29832));
+    }
+
+    {
         color::sRGB_uint8 val3(255, 127, 80);
 
         color::XYZ test_xyz;

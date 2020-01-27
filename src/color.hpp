@@ -1010,6 +1010,15 @@ namespace color
             }
         }
     }
+
+    template<typename destination, typename source>
+    inline
+    constexpr destination convert(const source& in)
+    {
+        destination out;
+        convert(in, out);
+        return out;
+    }
 }
 
 #endif // COLOR_HPP_INCLUDED
