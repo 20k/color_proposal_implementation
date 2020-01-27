@@ -97,6 +97,21 @@ struct weirdo_linear_space : color::basic_color<color::linear_RGB_space, weirdo_
     constexpr weirdo_linear_space(){}
 };
 
+struct fully_custom_colorspace
+{
+    float value = 0;
+    float value2 = 0;
+
+    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::sRGB_parameters::linear_to_XYZ;
+    static constexpr temporary::matrix_3x3 XYZ_to_linear = color::sRGB_parameters::XYZ_to_linear;
+};
+
+struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::RGB_float_model>
+{
+    constexpr fully_custom_color(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
+    constexpr fully_custom_color(){}
+};
+
 constexpr bool approx_equal(float v1, float v2)
 {
     if(v1 < v2)
