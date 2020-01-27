@@ -1044,6 +1044,10 @@ namespace color
         }
     };*/
 
+    ///TODO:
+    ///Runtime defined generic RGB space optimisation
+    ///TODO:
+    ///Is it legal to let a user overload this and stuff information into the struct?
     template<typename destination, typename source, typename... T>
     struct connector
     {
