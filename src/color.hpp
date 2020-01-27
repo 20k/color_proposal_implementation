@@ -822,7 +822,7 @@ namespace color
     template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
-    void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
+    constexpr void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
     {
         model_convert_member<T1, T2>(in.r, out.r);
         model_convert_member<U1, U2>(in.g, out.g);
@@ -832,7 +832,7 @@ namespace color
     template<typename T1, typename U1, typename V1, typename W1,
              typename T2, typename U2, typename V2, typename W2>
     inline
-    void model_convert(const RGBA_model<T1, U1, V1, W1>& in, RGBA_model<T2, U2, V2, W2>& out)
+    constexpr void model_convert(const RGBA_model<T1, U1, V1, W1>& in, RGBA_model<T2, U2, V2, W2>& out)
     {
         model_convert_member<T1, T2>(in.r, out.r);
         model_convert_member<U1, U2>(in.g, out.g);
@@ -843,7 +843,7 @@ namespace color
     ///direct conversion between two arbitrary rgb space
     template<typename space_1, typename model_1, typename space_2, typename model_2>
     inline
-    void color_convert(const basic_color<generic_RGB_space<space_1>, model_1>& in, basic_color<generic_RGB_space<space_2>, model_2>& out)
+    constexpr void color_convert(const basic_color<generic_RGB_space<space_1>, model_1>& in, basic_color<generic_RGB_space<space_2>, model_2>& out)
     {
         using type_1 = space_1;
         using type_2 = space_2;
@@ -866,7 +866,7 @@ namespace color
     ///generic RGB -> XYZ
     template<typename space, typename model>
     inline
-    void color_convert(const basic_color<generic_RGB_space<space>, model>& in, XYZ& out)
+    constexpr void color_convert(const basic_color<generic_RGB_space<space>, model>& in, XYZ& out)
     {
         using type = space;
 
@@ -885,7 +885,7 @@ namespace color
     ///XYZ -> generic RGB
     template<typename space, typename model>
     inline
-    void color_convert(const XYZ& in, basic_color<generic_RGB_space<space>, model>& out)
+    constexpr void color_convert(const XYZ& in, basic_color<generic_RGB_space<space>, model>& out)
     {
         using type = space;
 
@@ -943,7 +943,7 @@ namespace color
 
     template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2>
     inline
-    void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
+    constexpr void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;

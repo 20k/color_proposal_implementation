@@ -67,9 +67,12 @@ struct adobe_RGB_98_parameters
 using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters>;
 using adobe_float = color::basic_color<adobe_space, color::RGB_float_model>;
 
-bool approx_equal(float v1, float v2)
+constexpr bool approx_equal(float v1, float v2)
 {
-    return fabs(v1 - v2) < 0.000001f;
+    if(v1 < v2)
+        return (v2 - v1) < 0.000001f;
+    else
+        return (v1 - v2) < 0.000001f;
 }
 
 int main()
