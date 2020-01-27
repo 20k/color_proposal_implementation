@@ -543,11 +543,6 @@ namespace color
         }
     }
 
-    struct basic_generic_RGB_tag
-    {
-
-    };
-
     constexpr temporary::matrix_3x3 get_XYZ_to_linear_RGB(chromaticity R, chromaticity G, chromaticity B, chromaticity W)
     {
         float xr=0, yr=0, zr=0, xg=0, yg=0, zg=0, xb=0, yb=0, zb=0;
@@ -726,7 +721,7 @@ namespace color
     };
 
     template<typename T>
-    struct generic_RGB_space : T, basic_generic_RGB_tag, static_color_space
+    struct generic_RGB_space : T, static_color_space
     {
         using RGB_parameters = T;
     };
