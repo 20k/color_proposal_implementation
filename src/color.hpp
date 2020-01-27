@@ -185,7 +185,7 @@ namespace color
     inline constexpr
     void model_convert_member(const typename T1::type& in, typename T2::type& out)
     {
-        auto intermediate = ((in - T1::min) / (T1::max - T1::min)) * (T2::max - T2::min) + T2::min;
+        auto intermediate = ((in - T1::base) / (T1::scale)) * (T2::scale) + T2::base;
 
         if(std::is_integral_v<typename T2::type>)
             intermediate = round(intermediate);
@@ -198,12 +198,14 @@ namespace color
             out = intermediate;
     }
 
-    ///TODO: Min and max are used as scale, and clamping
-    ///which is not ideal. Eg we might want an hdr linear srgb type that's -1 -> 2
-    ///but unscaled from regular linear sRGB
+    ///min and max are clamp values
+    ///to convert to this models space, a normalised float value is multiplied by scale, and then base is added
     struct normalised_float_value_model
     {
         using type = float;
+
+        static inline constexpr float base = 0;
+        static inline constexpr float scale = 1;
 
         static inline constexpr float min = 0;
         static inline constexpr float max = 1;
@@ -213,6 +215,9 @@ namespace color
     {
         using type = uint8_t;
 
+        static inline constexpr float base = 0;
+        static inline constexpr float scale = 255;
+
         static inline constexpr float min = 0;
         static inline constexpr float max = 255;
     };
@@ -220,6 +225,9 @@ namespace color
     struct unnormalised_float_value_model
     {
         using type = float;
+
+        static inline constexpr float base = 0;
+        static inline constexpr float scale = 1;
 
         static inline constexpr float min = -FLT_MAX;
         static inline constexpr float max = FLT_MAX;
