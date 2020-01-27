@@ -813,8 +813,6 @@ namespace color
         constexpr sRGB_float(){}
     };
 
-    using XYZ = basic_color<XYZ_space, XYZ_model>;
-
     struct sRGBA_uint8 : basic_color<sRGB_space, RGBA_uint8_model>
     {
         constexpr sRGBA_uint8(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a){r = _r; g = _g; b = _b; a = _a;}
@@ -837,6 +835,12 @@ namespace color
     {
         constexpr linear_RGBA_float(float _r, float _g, float _b, float _a){r = _r; g = _g; b = _b; a = _a;}
         constexpr linear_RGBA_float(){}
+    };
+
+    struct XYZ : basic_color<XYZ_space, XYZ_model>
+    {
+        constexpr XYZ(float _X, float _Y, float _Z){X = _X; Y = _Y; Z = _Z;}
+        constexpr XYZ(){}
     };
 
     template<typename T1, typename U1, typename V1,
@@ -886,7 +890,7 @@ namespace color
     ///generic RGB -> XYZ
     template<typename space, typename model>
     inline
-    constexpr void color_convert(const basic_color<generic_RGB_space<space>, model>& in, XYZ& out)
+    constexpr void color_convert(const basic_color<generic_RGB_space<space>, model>& in, basic_color<XYZ_space, XYZ_model>& out)
     {
         using type = space;
 
@@ -905,7 +909,7 @@ namespace color
     ///XYZ -> generic RGB
     template<typename space, typename model>
     inline
-    constexpr void color_convert(const XYZ& in, basic_color<generic_RGB_space<space>, model>& out)
+    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model>& in, basic_color<generic_RGB_space<space>, model>& out)
     {
         using type = space;
 
@@ -1005,7 +1009,7 @@ namespace color
             }
             else
             {
-                XYZ intermediate;
+                basic_color<XYZ_space, XYZ_model> intermediate;
                 color_convert(in, intermediate);
                 color_convert(intermediate, in);
             }
