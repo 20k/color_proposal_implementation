@@ -99,12 +99,12 @@ struct weirdo_linear_space : color::basic_color<color::linear_RGB_space, weirdo_
 
 struct fully_custom_colorspace
 {
-    float value = 0;
-    float value2 = 0;
+    //float value = 0;
+    //float value2 = 0;
 
     ///Not necessary, purely for testing purposes. Not an RGB colorspace!
-    static constexpr temporary::matrix_3x3 impl_linear_to_XYZ = color::sRGB_parameters::linear_to_XYZ;
-    static constexpr temporary::matrix_3x3 impl_XYZ_to_linear = color::sRGB_parameters::XYZ_to_linear;
+    static inline constexpr temporary::matrix_3x3 impl_linear_to_XYZ = color::sRGB_parameters::linear_to_XYZ;
+    static inline constexpr temporary::matrix_3x3 impl_XYZ_to_linear = color::sRGB_parameters::XYZ_to_linear;
 };
 
 struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::RGB_float_model>
@@ -114,13 +114,13 @@ struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::R
 };
 
 template<typename space, typename model>
-void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>& in, fully_custom_color& out)
+void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>& in, fully_custom_color& out, const fully_custom_colorspace& full)
 {
 
 }
 
 template<typename space, typename model>
-void color_convert(fully_custom_color& out, const color::basic_color<color::XYZ_space, color::XYZ_model>& in)
+void color_convert(fully_custom_color& out, const color::basic_color<color::XYZ_space, color::XYZ_model>& in, const fully_custom_colorspace& full)
 {
 
 }
@@ -166,6 +166,11 @@ void tests()
         static_assert(approx_equal(srgb.r, 255));
         static_assert(approx_equal(srgb.g, 255));
         static_assert(approx_equal(srgb.b, 188));
+    }
+
+    {
+        fully_custom_colorspace colour_instance;
+        auto conn = color::make_connector<color::linear_RGB_float, fully_custom_color>(colour_instance);
     }
 
     {

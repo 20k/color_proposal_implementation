@@ -972,9 +972,9 @@ namespace color
     }
 
     ///TODO: Conversions with alpha between different colour spaces do not work
-    template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2>
+    template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2, typename... Args>
     inline
-    constexpr void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out)
+    constexpr void convert(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out, Args&&... args)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
@@ -1011,13 +1011,13 @@ namespace color
         {
             if constexpr(has_optimised_conversion(in, out))
             {
-                color_convert(in, out);
+                color_convert(in, out, std::forward<Args>(args)...);
             }
             else
             {
                 basic_color<XYZ_space, XYZ_model> intermediate;
-                color_convert(in, intermediate);
-                color_convert(intermediate, in);
+                color_convert(in, intermediate, std::forward<Args>(args)...);
+                color_convert(intermediate, out); ///TODO: Args2...
             }
         }
     }
@@ -1031,17 +1031,33 @@ namespace color
         return out;
     }
 
-    template<typename destination, typename source, typename... T>
+    /*template<typename destination, typename source, typename... T>
     struct connector
     {
         std::tuple<T...> custom_data;
-        constexpr connector(T&&... in) : custom_data(std::forward<T...>(custom_data)){}
+        constexpr connector(T&&... in) : custom_data(std::make_tuple(std::forward<T>(in)...)){}
 
         constexpr destination convert(const source& in)
         {
             return std::apply(color::convert<source, destination, T...>, custom_data);
         }
+    };*/
+
+    template<typename destination, typename source, typename... T>
+    struct connector
+    {
+        std::tuple<T...> custom_data;
+
+        template<typename... U>
+        connector(U&&... in) : custom_data(std::forward<U>(in)...){}
     };
+
+    template<typename destination, typename source, typename... T>
+    connector<destination, source, T...> make_connector(T&&... args)
+    {
+        connector<destination, source, T...> ret(std::forward<T>(args)...);
+        return ret;
+    }
 }
 
 #endif // COLOR_HPP_INCLUDED
