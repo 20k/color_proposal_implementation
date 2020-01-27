@@ -627,8 +627,8 @@ namespace color
     {
         struct default_parameterisation
         {
-            ///work that still needs to be done:
-            ///can implement gamma to linear in terms of a lookup table for uint8_ts, or arbitrary integer values
+            ///TODO:
+            ///can now implement gamma to linear in terms of a lookup table for uint8_ts, or arbitrary integer values
             ///cannot implement high precision (or reduce precision, if you're mad) intermediate values
             ///ideally, gamma to linear would return a value type, as well as a value, like normalised_float_value model
             template<typename value_model, typename U>
@@ -737,6 +737,9 @@ namespace color
     };*/
 
     using sRGB_space = generic_RGB_space<sRGB_parameters>;
+    ///TODO: linear rgb is really linear sRGB
+    ///which implies the existance of general spaces which are the linear equivalents of their
+    ///non linear cousins. Transfer parameter should probably be a separate component
     using linear_RGB_space = generic_RGB_space<linear_RGB_parameters>;
 
     struct XYZ_space : static_color_space
