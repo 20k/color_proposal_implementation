@@ -841,22 +841,22 @@ namespace color
     template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
-    constexpr RGB_model<T2, U2, V2> model_convert(const RGB_model<T1, U1, V1>& in)
+    constexpr void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
     {
-        return {model_convert_member<T1, T2>(in.r),
-                model_convert_member<U1, U2>(in.g),
-                model_convert_member<V1, V2>(in.b)};
+        out.r = model_convert_member<T1, T2>(in.r);
+        out.g = model_convert_member<U1, U2>(in.g);
+        out.b = model_convert_member<V1, V2>(in.b);
     }
 
     template<typename T1, typename U1, typename V1, typename W1,
              typename T2, typename U2, typename V2, typename W2>
     inline
-    constexpr RGBA_model<T2, U2, V2, W2> model_convert(const RGBA_model<T1, U1, V1, W1>& in)
+    constexpr void model_convert(const RGBA_model<T1, U1, V1, W1>& in, RGBA_model<T2, U2, V2, W2>& out)
     {
-        return {model_convert_member<T1, T2>(in.r),
-                model_convert_member<U1, U2>(in.g),
-                model_convert_member<V1, V2>(in.b),
-                model_convert_member<W1, W2>(in.a)};
+        out.r = model_convert_member<T1, T2>(in.r);
+        out.g = model_convert_member<U1, U2>(in.g);
+        out.b = model_convert_member<V1, V2>(in.b);
+        out.a = model_convert_member<W1, W2>(in.a);
     }
 
     ///direct conversion between two arbitrary rgb space
@@ -982,7 +982,7 @@ namespace color
             model_2& destination_model = out;
 
             if constexpr(!same_model)
-                destination_model = model_convert<model_1, model_2>(base_model);
+                model_convert(base_model, destination_model);
             else
                 destination_model = base_model;
 
