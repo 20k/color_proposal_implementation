@@ -972,6 +972,7 @@ namespace color
     }
 
     ///TODO: Conversions with alpha between different colour spaces do not work
+    ///TODO: Should remember original base type when adl'ing users types
     template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2, typename... Args>
     inline
     constexpr void convert_impl(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out, Args&&... args)
