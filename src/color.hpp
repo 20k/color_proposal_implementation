@@ -780,9 +780,6 @@ namespace color
         float X = 0;
         float Y = 0;
         float Z = 0;
-
-        constexpr XYZ_model(float _X, float _Y, float _Z){X = _X; Y = _Y; Z = _Z;}
-        constexpr XYZ_model(){}
     };
 
     struct RGB_uint8_model : RGB_model<uint8_value_model, uint8_value_model, uint8_value_model>
