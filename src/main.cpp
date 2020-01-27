@@ -78,6 +78,25 @@ struct adobe_float : color::basic_color<adobe_space, color::RGB_float_model>
     constexpr adobe_float(){}
 };
 
+struct weirdo_float_value
+{
+    using type = float;
+
+    static inline constexpr float min = 0;
+    static inline constexpr float max = 255;
+};
+
+struct weirdo_float_model : color::RGB_model<weirdo_float_value, weirdo_float_value, weirdo_float_value>
+{
+
+};
+
+struct weirdo_linear_space : color::basic_color<color::linear_RGB_space, weirdo_float_model>
+{
+    constexpr weirdo_linear_space(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
+    constexpr weirdo_linear_space(){}
+};
+
 constexpr bool approx_equal(float v1, float v2)
 {
     if(v1 < v2)
@@ -98,6 +117,22 @@ void tests()
         static_assert(approx_equal(t2.r, 0.458407));
         static_assert(approx_equal(t2.g, 0.985265));
         static_assert(approx_equal(t2.b, 0.29832));
+    }
+
+    {
+        constexpr weirdo_linear_space i_dislike_type_safety(255, 255, 128);
+
+        static_assert(color::has_optimised_conversion(color::sRGB_float(), i_dislike_type_safety));
+        static_assert(color::has_optimised_conversion(P3_float(), i_dislike_type_safety));
+        static_assert(color::has_optimised_conversion(color::linear_RGB_float(), i_dislike_type_safety));
+
+        constexpr color::linear_RGB_float linear = color::convert<color::linear_RGB_float>(i_dislike_type_safety);
+
+        printf("LB %f\n", linear.b);
+
+        static_assert(approx_equal(linear.r, 1.f));
+        static_assert(approx_equal(linear.g, 1.f));
+        //static_assert(approx_equal(linear.b, 0.5f));
     }
 
     {
