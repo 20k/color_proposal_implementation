@@ -43,7 +43,12 @@ struct P3_parameters
 };
 
 using P3_space = color::generic_RGB_space<P3_parameters>;
-using P3_float = color::basic_color<P3_space, color::RGB_float_model>;
+
+struct P3_float : color::basic_color<P3_space, color::RGB_float_model>
+{
+    constexpr P3_float(float _r, float _g, float _b) {r = _r; g = _g; b = _b;}
+    constexpr P3_float(){}
+};
 
 struct adobe_RGB_98_parameters
 {
