@@ -125,6 +125,7 @@ void tests()
         static_assert(color::has_optimised_conversion(color::sRGB_float(), i_dislike_type_safety));
         static_assert(color::has_optimised_conversion(P3_float(), i_dislike_type_safety));
         static_assert(color::has_optimised_conversion(color::linear_RGB_float(), i_dislike_type_safety));
+        static_assert(color::has_optimised_conversion(color::sRGB_uint8(), i_dislike_type_safety));
 
         constexpr color::linear_RGB_float linear = color::convert<color::linear_RGB_float>(i_dislike_type_safety);
 
