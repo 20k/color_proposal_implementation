@@ -115,12 +115,24 @@ struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::R
 
 void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>& in, color::basic_color<fully_custom_colorspace, color::RGB_float_model>& out, fully_custom_colorspace& full)
 {
+    printf("Custom data v1 v2 %f %f\n", full.value, full.value2);
 
+    auto transformed = temporary::multiply(full.impl_XYZ_to_linear, (temporary::vector_1x3){in.X, in.Y, in.Z});
+
+    out.r = transformed.a[0];
+    out.g = transformed.a[1];
+    out.b = transformed.a[2];
 }
 
 void color_convert(const color::basic_color<fully_custom_colorspace, color::RGB_float_model>& in, color::basic_color<color::XYZ_space, color::XYZ_model>& out, fully_custom_colorspace& full)
 {
+    printf("Custom data v1 v2 %f %f\n", full.value, full.value2);
 
+    auto transformed = temporary::multiply(full.impl_linear_to_XYZ, (temporary::vector_1x3){in.r, in.g, in.b});
+
+    out.X = transformed.a[0];
+    out.Y = transformed.a[1];
+    out.Z = transformed.a[2];
 }
 
 constexpr bool approx_equal(float v1, float v2)
@@ -179,6 +191,8 @@ void tests()
         auto conn = color::make_connector<color::linear_RGB_float, fully_custom_color>(colour_instance);
 
         color::linear_RGB_float converted = conn.convert(ccol);
+
+        printf("Found %f %f %f\n", converted.r, converted.g, converted.b);
     }
 
     {
