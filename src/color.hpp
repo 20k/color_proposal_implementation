@@ -577,21 +577,23 @@ namespace color
     }
 
     template<typename T1, typename T2>
-    inline
-    constexpr void model_convert_member(const typename T1::type& in, typename T2::type& out)
+    inline constexpr
+    typename T2::type model_convert_member(const typename T1::type& in)
     {
         auto intermediate = ((in - T1::min) / (T1::max - T1::min)) * (T2::max - T2::min) + T2::min;
 
         if(std::is_integral_v<typename T2::type>)
             intermediate = round(intermediate);
 
-        out = intermediate;
+        typename T2::type out = intermediate;
 
         if(out < T2::min)
             out = T2::min;
 
         if(out > T2::max)
             out = T2::max;
+
+        return out;
     }
 
     struct normalised_float_value_model
@@ -630,9 +632,7 @@ namespace color
             static inline constexpr
             float gamma_to_linear(typename value_model::type real_component, const U& in, value_model tag)
             {
-                float component = 0;
-
-                model_convert_member<value_model, normalised_float_value_model>(real_component, component);
+                float component = model_convert_member<value_model, normalised_float_value_model>(real_component);
 
                 if(component <= in.transfer_bdelta)
                     return component / in.transfer_delta;
@@ -651,11 +651,7 @@ namespace color
                 else
                     my_val = in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
 
-                typename value_model::type val = typename value_model::type();
-
-                model_convert_member<normalised_float_value_model, value_model>(my_val, val);
-
-                return val;
+                return model_convert_member<normalised_float_value_model, value_model>(my_val);
             }
         };
 
@@ -845,22 +841,22 @@ namespace color
     template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
-    constexpr void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
+    constexpr RGB_model<T2, U2, V2> model_convert(const RGB_model<T1, U1, V1>& in)
     {
-        model_convert_member<T1, T2>(in.r, out.r);
-        model_convert_member<U1, U2>(in.g, out.g);
-        model_convert_member<V1, V2>(in.b, out.b);
+        return {model_convert_member<T1, T2>(in.r),
+                model_convert_member<U1, U2>(in.g),
+                model_convert_member<V1, V2>(in.b)};
     }
 
     template<typename T1, typename U1, typename V1, typename W1,
              typename T2, typename U2, typename V2, typename W2>
     inline
-    constexpr void model_convert(const RGBA_model<T1, U1, V1, W1>& in, RGBA_model<T2, U2, V2, W2>& out)
+    constexpr RGBA_model<T2, U2, V2, W2> model_convert(const RGBA_model<T1, U1, V1, W1>& in)
     {
-        model_convert_member<T1, T2>(in.r, out.r);
-        model_convert_member<U1, U2>(in.g, out.g);
-        model_convert_member<V1, V2>(in.b, out.b);
-        model_convert_member<W1, W2>(in.a, out.a);
+        return {model_convert_member<T1, T2>(in.r),
+                model_convert_member<U1, U2>(in.g),
+                model_convert_member<V1, V2>(in.b),
+                model_convert_member<W1, W2>(in.a)};
     }
 
     ///direct conversion between two arbitrary rgb space
@@ -986,7 +982,7 @@ namespace color
             model_2& destination_model = out;
 
             if constexpr(!same_model)
-                model_convert(base_model, destination_model);
+                destination_model = model_convert<model_1, model_2>(base_model);
             else
                 destination_model = base_model;
 
