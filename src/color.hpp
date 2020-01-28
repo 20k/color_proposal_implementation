@@ -442,6 +442,8 @@ namespace color
         constexpr XYZ(){}
     };
 
+    ///TODO: the only reason this exists is for alpha
+    ///once alpha is handled, this can and will go away
     template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
