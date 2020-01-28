@@ -476,16 +476,25 @@ namespace color
         auto lin_g = gamma_1::gamma::gamma_to_linear(in.g, gamma_1(), typename model_1::G_value());
         auto lin_b = gamma_1::gamma::gamma_to_linear(in.b, gamma_1(), typename model_1::B_value());
 
-        auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
+        ///do not care about model
+        if constexpr(std::is_same_v<space_1, space_2>)
+        {
+            out.r = gamma_2::gamma::linear_to_gamma(lin_r, gamma_2(), typename model_2::R_value());
+            out.g = gamma_2::gamma::linear_to_gamma(lin_g, gamma_2(), typename model_2::G_value());
+            out.b = gamma_2::gamma::linear_to_gamma(lin_b, gamma_2(), typename model_2::B_value());
+        }
+        else
+        {
+            auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
 
-        ///Todo: need to eliminate this if the only difference between two spaces is the transfer function
-        ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
-        ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
-        auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+            ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
+            ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
+            auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
 
-        out.r = gamma_2::gamma::linear_to_gamma(vec.a[0], gamma_2(), typename model_2::R_value());
-        out.g = gamma_2::gamma::linear_to_gamma(vec.a[1], gamma_2(), typename model_2::G_value());
-        out.b = gamma_2::gamma::linear_to_gamma(vec.a[2], gamma_2(), typename model_2::B_value());
+            out.r = gamma_2::gamma::linear_to_gamma(vec.a[0], gamma_2(), typename model_2::R_value());
+            out.g = gamma_2::gamma::linear_to_gamma(vec.a[1], gamma_2(), typename model_2::G_value());
+            out.b = gamma_2::gamma::linear_to_gamma(vec.a[2], gamma_2(), typename model_2::B_value());
+        }
     }
 
     ///generic RGB -> XYZ
