@@ -496,6 +496,8 @@ namespace color
         auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
 
         ///Todo: need to eliminate this if the only difference between two spaces is the transfer function
+        ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
+        ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
         auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
 
         out.r = type_2::gamma::linear_to_gamma(vec.a[0], type_2(), typename model_2::R_value());
