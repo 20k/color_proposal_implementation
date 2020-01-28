@@ -10,19 +10,22 @@ struct P3_parameters
     static constexpr color::chromaticity B{0.15, 0.06};
     static constexpr color::chromaticity W = color::illuminant::CIE1931::D65;
 
+    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
+    static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+};
+
+struct P3_transfer_parameters
+{
     static constexpr float transfer_alpha = 1.055;
     static constexpr float transfer_beta = 0.0031308;
     static constexpr float transfer_gamma = 12/5.f;
     static constexpr float transfer_delta = 12.92;
     static constexpr float transfer_bdelta = 0.04045;
 
-    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
-    static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
-
     using gamma = color::transfer_function::default_parameterisation;
 };
 
-using P3_space = color::generic_RGB_space<P3_parameters>;
+using P3_space = color::generic_RGB_space<P3_parameters, P3_transfer_parameters>;
 
 struct P3_float : color::basic_color<P3_space, color::RGB_float_model>
 {
@@ -37,19 +40,22 @@ struct adobe_RGB_98_parameters
     static constexpr color::chromaticity B{0.15, 0.06};
     static constexpr color::chromaticity W = color::illuminant::CIE1931::D65;
 
+    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
+    static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
+};
+
+struct adobe_RGB_98_transfer_parameters
+{
     static constexpr float transfer_alpha = 1;
     static constexpr float transfer_beta = 0;
     static constexpr float transfer_gamma = 563/256.f;
     static constexpr float transfer_delta = 1;
     static constexpr float transfer_bdelta = 0;
 
-    static constexpr temporary::matrix_3x3 linear_to_XYZ = color::get_linear_RGB_to_XYZ(R, G, B, W);
-    static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
-
     using gamma = color::transfer_function::default_parameterisation;
 };
 
-using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters>;
+using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters, adobe_RGB_98_transfer_parameters>;
 //using adobe_float = color::basic_color<adobe_space, color::RGB_float_model>;
 
 struct adobe_float : color::basic_color<adobe_space, color::RGB_float_model>
@@ -74,7 +80,7 @@ struct weirdo_float_model : color::RGB_model<weirdo_float_value, weirdo_float_va
 
 };
 
-struct weirdo_linear_space : color::basic_color<color::linear_RGB_space, weirdo_float_model>
+struct weirdo_linear_space : color::basic_color<color::linear_sRGB_space, weirdo_float_model>
 {
     constexpr weirdo_linear_space(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
     constexpr weirdo_linear_space(){}
@@ -145,10 +151,10 @@ void tests()
 
         static_assert(color::has_optimised_conversion<color::sRGB_float, weirdo_linear_space>());
         static_assert(color::has_optimised_conversion<P3_float, weirdo_linear_space>());
-        static_assert(color::has_optimised_conversion<color::linear_RGB_float, weirdo_linear_space>());
+        static_assert(color::has_optimised_conversion<color::linear_sRGB_float, weirdo_linear_space>());
         static_assert(color::has_optimised_conversion<color::sRGB_uint8, weirdo_linear_space>());
 
-        constexpr color::linear_RGB_float linear = color::convert<color::linear_RGB_float>(i_dislike_type_safety);
+        constexpr color::linear_sRGB_float linear = color::convert<color::linear_sRGB_float>(i_dislike_type_safety);
 
         static_assert(approx_equal(linear.r, 1.f));
         static_assert(approx_equal(linear.g, 1.f));
@@ -171,13 +177,13 @@ void tests()
         ccol.g = 0;
         ccol.b = 1;
 
-        auto conn = color::make_connector<color::linear_RGB_float, fully_custom_color>(colour_instance);
+        auto conn = color::make_connector<color::linear_sRGB_float, fully_custom_color>(colour_instance);
 
-        color::linear_RGB_float converted = conn.convert(ccol);
+        color::linear_sRGB_float converted = conn.convert(ccol);
 
         printf("Found %f %f %f\n", converted.r, converted.g, converted.b);
 
-        color::linear_RGB_float converted2 = color::convert<color::linear_RGB_float>(ccol, colour_instance);
+        color::linear_sRGB_float converted2 = color::convert<color::linear_sRGB_float>(ccol, colour_instance);
 
         printf("Found2 %f %f %f\n", converted2.r, converted2.g, converted2.b);
     }
@@ -248,9 +254,9 @@ void tests()
     }
 
     {
-        color::linear_RGB_float lin(1, 0, 1);
+        color::linear_sRGB_float lin(1, 0, 1);
 
-        static_assert(color::has_optimised_conversion<color::linear_RGB_float, color::sRGB_float>());
+        static_assert(color::has_optimised_conversion<color::linear_sRGB_float, color::sRGB_float>());
 
         color::sRGB_float srgb = color::convert<color::sRGB_float>(lin);
 
@@ -260,9 +266,9 @@ void tests()
     }
 
     {
-        color::linear_RGB_float lin(0.5, 1, 0.5);
+        color::linear_sRGB_float lin(0.5, 1, 0.5);
 
-        static_assert(color::has_optimised_conversion<color::linear_RGB_float, color::sRGB_uint8>());
+        static_assert(color::has_optimised_conversion<color::linear_sRGB_float, color::sRGB_uint8>());
 
         color::sRGB_uint8 srgb = color::convert<color::sRGB_uint8>(lin);
 
