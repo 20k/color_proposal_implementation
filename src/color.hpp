@@ -547,7 +547,7 @@ namespace color
     struct has_direct_conversion_c<T, U, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>()))>> : std::true_type{};
 
     template<typename T, typename U>
-    constexpr bool has_optimised_conversion(const T& one, const U& two)
+    constexpr bool has_optimised_conversion()
     {
         return has_direct_conversion_c<T, U>::value;
     }
@@ -591,7 +591,7 @@ namespace color
         }
         else
         {
-            if constexpr(has_optimised_conversion(in, out))
+            if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
             {
                 color_convert(in, out, std::forward<Args>(args)...);
             }

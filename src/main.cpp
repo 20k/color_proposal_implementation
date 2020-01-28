@@ -131,7 +131,7 @@ void tests()
     {
         constexpr color::sRGB_float t1(0, 1, 0);
 
-        static_assert(color::has_optimised_conversion(color::sRGB_float(), P3_float()));
+        static_assert(color::has_optimised_conversion<color::sRGB_float, P3_float>());
 
         constexpr P3_float t2 = color::convert<P3_float>(t1);
 
@@ -143,10 +143,10 @@ void tests()
     {
         constexpr weirdo_linear_space i_dislike_type_safety(255, 255, 128);
 
-        static_assert(color::has_optimised_conversion(color::sRGB_float(), i_dislike_type_safety));
-        static_assert(color::has_optimised_conversion(P3_float(), i_dislike_type_safety));
-        static_assert(color::has_optimised_conversion(color::linear_RGB_float(), i_dislike_type_safety));
-        static_assert(color::has_optimised_conversion(color::sRGB_uint8(), i_dislike_type_safety));
+        static_assert(color::has_optimised_conversion<color::sRGB_float, weirdo_linear_space>());
+        static_assert(color::has_optimised_conversion<P3_float, weirdo_linear_space>());
+        static_assert(color::has_optimised_conversion<color::linear_RGB_float, weirdo_linear_space>());
+        static_assert(color::has_optimised_conversion<color::sRGB_uint8, weirdo_linear_space>());
 
         constexpr color::linear_RGB_float linear = color::convert<color::linear_RGB_float>(i_dislike_type_safety);
 
@@ -185,11 +185,11 @@ void tests()
     {
         color::sRGB_uint8 val3(255, 127, 80);
 
-        static_assert(color::has_optimised_conversion(val3, color::XYZ()));
+        static_assert(color::has_optimised_conversion<color::sRGB_uint8, color::XYZ>());
 
         color::XYZ test_xyz = color::convert<color::XYZ>(val3);
 
-        static_assert(color::has_optimised_conversion(test_xyz, color::sRGB_float()));
+        static_assert(color::has_optimised_conversion<color::XYZ, color::sRGB_float>());
 
         color::sRGB_float val4 = color::convert<color::sRGB_float>(test_xyz);
 
@@ -212,7 +212,7 @@ void tests()
     {
         color::sRGB_float t1(0, 1, 0);
 
-        static_assert(color::has_optimised_conversion(t1, P3_float()));
+        static_assert(color::has_optimised_conversion<color::sRGB_float, P3_float>());
 
         P3_float t2 = color::convert<P3_float>(t1);
 
@@ -230,7 +230,7 @@ void tests()
     {
         color::sRGB_float t1(0, 1, 0);
 
-        static_assert(color::has_optimised_conversion(t1, adobe_float()));
+        static_assert(color::has_optimised_conversion<color::sRGB_float, adobe_float>());
 
         adobe_float t2 = color::convert<adobe_float>(t1);
 
@@ -242,7 +242,7 @@ void tests()
     {
         adobe_float t1(1, 0, 1);
 
-        static_assert(color::has_optimised_conversion(t1, color::XYZ()));
+        static_assert(color::has_optimised_conversion<adobe_float, color::XYZ>());
 
         color::XYZ t2 = color::convert<color::XYZ>(t1);
     }
@@ -250,7 +250,7 @@ void tests()
     {
         color::linear_RGB_float lin(1, 0, 1);
 
-        static_assert(color::has_optimised_conversion(lin, color::sRGB_float()));
+        static_assert(color::has_optimised_conversion<color::linear_RGB_float, color::sRGB_float>());
 
         color::sRGB_float srgb = color::convert<color::sRGB_float>(lin);
 
@@ -262,7 +262,7 @@ void tests()
     {
         color::linear_RGB_float lin(0.5, 1, 0.5);
 
-        static_assert(color::has_optimised_conversion(lin, color::sRGB_uint8()));
+        static_assert(color::has_optimised_conversion<color::linear_RGB_float, color::sRGB_uint8>());
 
         color::sRGB_uint8 srgb = color::convert<color::sRGB_uint8>(lin);
 
