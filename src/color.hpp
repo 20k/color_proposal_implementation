@@ -325,21 +325,8 @@ namespace color
         using gamma = transfer_function::none;
     };
 
-    ///eg sRGB
-    struct static_color_space : basic_color_space
-    {
-
-    };
-
-    ///something that might need profiles, runtime information
     template<typename T>
-    struct dynamic_color_space : basic_color_space
-    {
-        T& dynamic_data;
-    };
-
-    template<typename T>
-    struct generic_RGB_space : T, static_color_space
+    struct generic_RGB_space : T, basic_color_space
     {
         using RGB_parameters = T;
     };
@@ -350,7 +337,7 @@ namespace color
     ///non linear cousins. Transfer parameter should probably be a separate component
     using linear_RGB_space = generic_RGB_space<linear_RGB_parameters>;
 
-    struct XYZ_space : static_color_space
+    struct XYZ_space : basic_color_space
     {
 
     };
