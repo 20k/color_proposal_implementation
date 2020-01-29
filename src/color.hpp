@@ -367,8 +367,7 @@ namespace color
         constexpr RGB_model(){}
     };
 
-    ///Todo: Due to the way this is specified, it is too easy
-    ///To accidentally convert RGBA to RGB. Needs fixing
+    ///Todo: Alpha isn't handled correctly at all currently
     template<typename V1, typename V2, typename V3, typename V4>
     struct RGBA_model : basic_color_model
     {
