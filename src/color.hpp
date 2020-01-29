@@ -376,6 +376,11 @@ namespace color
             return std::tie(r, g, b);
         }
 
+        constexpr std::tuple<V1, V2, V3> get_color_description() const
+        {
+            return {V1(), V2(), V3()};
+        }
+
         constexpr std::tuple<> get_alpha()
         {
             return std::tuple<>();
@@ -386,9 +391,9 @@ namespace color
             return std::tuple<>();
         }
 
-        constexpr std::tuple<V1, V2, V3> get_component_description() const
+        constexpr std::tuple<> get_alpha_description() const
         {
-            return {V1(), V2(), V3()};
+            return std::tuple<>();
         }
     };
 
@@ -419,6 +424,11 @@ namespace color
             return std::tie(r, g, b);
         }
 
+        constexpr std::tuple<V1, V2, V3> get_color_description() const
+        {
+            return {V1(), V2(), V3()};
+        }
+
         constexpr std::tuple<typename V4::type> get_alpha() const
         {
             return std::tie(a);
@@ -429,9 +439,9 @@ namespace color
             return std::tie(a);
         }
 
-        constexpr std::tuple<V1, V2, V3, V4> get_component_description() const
+        constexpr std::tuple<V4> get_alpha_description() const
         {
-            return {V1(), V2(), V3(), V4()};
+            return {V4()};
         }
     };
 
@@ -528,25 +538,35 @@ namespace color
         model_convert_member<W1, W2>(in.a, out.a);
     }
 
+    template<typename T1, typename T2, typename D1, typename D2, std::size_t... Is>
+    inline
+    constexpr void model_convert_tuple(T1& out, const T2& in, const D1& desc_1, const D2& desc_2, std::index_sequence<Is...> iseq)
+    {
+        (model_convert_member<std::tuple_element_t<Is, D1>, std::tuple_element_t<Is, D2>>(std::get<Is>(in), std::get<Is>(out)), ...);
+    }
+
     template<typename func_space, typename Result_tuple, typename T1, typename T2, std::size_t... Is>
+    inline
     constexpr void linear_to_gamma_apply(Result_tuple& res, const T1& tup_1, const T2& tup_2, std::index_sequence<Is...> iseq)
     {
         ((std::get<Is>(res) = func_space::gamma::linear_to_gamma(std::get<Is>(tup_1), func_space(), std::get<Is>(tup_2))), ...);
     }
 
     template<typename func_space, typename Result_tuple, typename T1, typename T2, std::size_t... Is>
+    inline
     constexpr void gamma_to_linear_apply(Result_tuple& res, const T1& tup_1, const T2& tup_2, std::index_sequence<Is...> iseq)
     {
         ((std::get<Is>(res) = func_space::gamma::gamma_to_linear(std::get<Is>(tup_1), func_space(), std::get<Is>(tup_2))), ...);
     }
 
     template<typename... T>
+    inline
     constexpr auto tuple_to_isequence(const std::tuple<T...>& in)
     {
         return std::index_sequence_for<T...>();
     }
 
-    ///direct conversion between two arbitrary RGB space
+    ///direct conversion between two arbitrary RGB(A) space
     template<typename space_1, typename model_1, typename gamma_1, typename space_2, typename model_2, typename gamma_2>
     inline
     constexpr void color_convert(const basic_color<generic_RGB_space<space_1, gamma_1>, model_1>& in, basic_color<generic_RGB_space<space_2, gamma_2>, model_2>& out)
@@ -557,17 +577,24 @@ namespace color
         ///Linear colour currently is always floats
 
         auto color_tuple = in.get_color();
-        auto descriptor_tuple = in.get_component_description();
-
+        auto descriptor_tuple = in.get_color_description();
         auto seq = tuple_to_isequence(color_tuple);
+
+        auto in_alpha_tuple = in.get_alpha();
+        auto in_alpha_descriptor_tuple = in.get_alpha_description();
 
         decltype(color_tuple) linear_tuple;
 
         gamma_to_linear_apply<gamma_1>(linear_tuple, color_tuple, descriptor_tuple, seq);
 
         auto out_tuple = out.get_color();
-        auto out_descriptor_tuple = out.get_component_description();
+        auto out_descriptor_tuple = out.get_color_description();
         auto out_seq = tuple_to_isequence(out_tuple);
+
+        auto out_alpha_tuple = out.get_alpha();
+        auto out_alpha_descriptor_tuple = out.get_alpha_description();
+
+        static_assert(std::tuple_size_v<decltype(out_tuple)> == std::tuple_size_v<decltype(color_tuple)>, "Attempting to convert between two RGB spaces with a different number of color components is not supported");
 
         ///do not care about model
         if constexpr(std::is_same_v<space_1, space_2>)
@@ -587,6 +614,12 @@ namespace color
 
             linear_to_gamma_apply<gamma_2>(out_tuple, converted_linear_tuple, out_descriptor_tuple, out_seq);
         }
+
+        static_assert(std::tuple_size_v<decltype(in_alpha_tuple)> == std::tuple_size_v<decltype(out_alpha_tuple)>, "Cannot convert between two colours with different numbers of alpha components");
+
+        auto alpha_seq = tuple_to_isequence(in_alpha_tuple);
+
+        model_convert_tuple(out_alpha_tuple, in_alpha_tuple, out_alpha_descriptor_tuple, in_alpha_descriptor_tuple, alpha_seq);
     }
 
     ///generic RGB -> XYZ
