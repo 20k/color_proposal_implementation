@@ -1,3 +1,9 @@
+/*
+* color.hpp
+* 2020-01-19 18:31:17
+* J. Guy Davidson
+*/
+
 #ifndef COLOR_HPP_INCLUDED
 #define COLOR_HPP_INCLUDED
 
