@@ -352,6 +352,16 @@ namespace color
         using A_value = VA;
     };
 
+    template<>
+    struct alpha_model<void>
+    {
+
+    };
+
+    using float_alpha = alpha_model<normalised_float_value_model>;
+    using uint8_alpha = alpha_model<uint8_value_model>;
+    using no_alpha = alpha_model<void>;
+
     template<typename V1, typename V2, typename V3>
     struct RGB_model : basic_color_model
     {
@@ -368,7 +378,7 @@ namespace color
     };
 
     ///Todo: Alpha isn't handled correctly at all currently
-    template<typename V1, typename V2, typename V3, typename V4>
+    /*template<typename V1, typename V2, typename V3, typename V4>
     struct RGBA_model : basic_color_model
     {
         typename V1::type r = typename V1::type();
@@ -383,7 +393,7 @@ namespace color
 
         constexpr RGBA_model(typename V1::type _r, typename V2::type _g, typename V3::type _b, typename V4::type _a) : r(_r), g(_g), b(_b), a(_a){}
         constexpr RGBA_model(){}
-    };
+    };*/
 
     struct XYZ_model : basic_color_model
     {
@@ -394,70 +404,84 @@ namespace color
 
     using RGB_uint8_model = RGB_model<uint8_value_model, uint8_value_model, uint8_value_model>;
     using RGB_float_model = RGB_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>;
-    using RGBA_uint8_model = RGBA_model<uint8_value_model, uint8_value_model, uint8_value_model, uint8_value_model>;
-    using RGBA_float_model = RGBA_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>;
+    //using RGBA_uint8_model = RGBA_model<uint8_value_model, uint8_value_model, uint8_value_model, uint8_value_model>;
+    //using RGBA_float_model = RGBA_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>;
 
-    template<typename cspace, typename cmodel, typename... tags>
-    struct basic_color : cmodel, tags...
+    template<typename cspace, typename cmodel, typename calpha, typename... tags>
+    struct basic_color : cmodel, calpha, tags...
     {
         using space_type = cspace;
         using model_type = cmodel;
+        using alpha_type = calpha;
         using cmodel::cmodel;
+        using calpha::calpha;
     };
 
-    /*struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
+    struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model, no_alpha>
     {
         constexpr sRGB_uint8(uint8_t _r, uint8_t _g, uint8_t _b){r = _r; g = _g; b = _b;}
         constexpr sRGB_uint8(){}
     };
 
-    struct sRGB_float : basic_color<sRGB_space, RGB_float_model>
+    struct sRGB_float : basic_color<sRGB_space, RGB_float_model, no_alpha>
     {
         constexpr sRGB_float(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
         constexpr sRGB_float(){}
     };
 
-    struct sRGBA_uint8 : basic_color<sRGB_space, RGBA_uint8_model>
+    struct sRGBA_uint8 : basic_color<sRGB_space, RGB_uint8_model, uint8_alpha>
     {
         constexpr sRGBA_uint8(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a){r = _r; g = _g; b = _b; a = _a;}
         constexpr sRGBA_uint8(){}
     };
 
-    struct sRGBA_float : basic_color<sRGB_space, RGBA_float_model>
+    struct sRGBA_float : basic_color<sRGB_space, RGB_float_model, float_alpha>
     {
         constexpr sRGBA_float(float _r, float _g, float _b, float _a){r = _r; g = _g; b = _b; a = _a;}
         constexpr sRGBA_float(){}
     };
 
-    struct linear_sRGB_float : basic_color<linear_sRGB_space, RGB_float_model>
+    struct linear_sRGB_float : basic_color<linear_sRGB_space, RGB_float_model, no_alpha>
     {
         constexpr linear_sRGB_float(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
         constexpr linear_sRGB_float(){}
     };
 
-    struct linear_sRGBA_float : basic_color<linear_sRGBA_float, RGBA_float_model>
+    struct linear_sRGBA_float : basic_color<linear_sRGBA_float, RGB_float_model, float_alpha>
     {
         constexpr linear_sRGBA_float(float _r, float _g, float _b, float _a){r = _r; g = _g; b = _b; a = _a;}
         constexpr linear_sRGBA_float(){}
     };
 
-    struct XYZ : basic_color<XYZ_space, XYZ_model>
+    struct XYZ : basic_color<XYZ_space, XYZ_model, no_alpha>
     {
         constexpr XYZ(float _X, float _Y, float _Z){X = _X; Y = _Y; Z = _Z;}
         constexpr XYZ(){}
-    };*/
+    };
 
-    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
+    template<typename T1, typename T2>
+    inline
+    constexpr void convert_alpha(const alpha_model<T1>& in, alpha_model<T2>& out)
+    {
+        static_assert(std::is_same_v<T1, void> == std::is_same_v<T2, void>, "Cannot drop or gain an alpha component");
+
+        if constexpr(std::is_same_v<T1, void>)
+            return;
+        else
+            model_convert_member<T1, T2>(in.a, out.a);
+    }
+
+    /*using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
     using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
     using sRGBA_uint8 = basic_color<sRGB_space, RGBA_uint8_model>;
     using sRGBA_float = basic_color<sRGB_space, RGBA_float_model>;
     using linear_sRGB_float = basic_color<linear_sRGB_space, RGB_float_model>;
     using linear_sRGBA_float = basic_color<linear_sRGB_space, RGBA_float_model>;
-    using XYZ = basic_color<XYZ_space, XYZ_model>;
+    using XYZ = basic_color<XYZ_space, XYZ_model>;*/
 
     ///TODO: the only reason this exists is for alpha
     ///once alpha is handled, this can and will go away
-    template<typename T1, typename U1, typename V1,
+    /*template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
     constexpr void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
@@ -476,12 +500,12 @@ namespace color
         model_convert_member<U1, U2>(in.g, out.g);
         model_convert_member<V1, V2>(in.b, out.b);
         model_convert_member<W1, W2>(in.a, out.a);
-    }
+    }*/
 
     ///direct conversion between two arbitrary RGB space
-    template<typename space_1, typename model_1, typename gamma_1, typename space_2, typename model_2, typename gamma_2>
+    template<typename space_1, typename model_1, typename gamma_1, typename alpha_1, typename space_2, typename model_2, typename gamma_2, typename alpha_2>
     inline
-    constexpr void color_convert(const basic_color<generic_RGB_space<space_1, gamma_1>, model_1>& in, basic_color<generic_RGB_space<space_2, gamma_2>, model_2>& out)
+    constexpr void color_convert(const basic_color<generic_RGB_space<space_1, gamma_1>, model_1, alpha_1>& in, basic_color<generic_RGB_space<space_2, gamma_2>, model_2, alpha_2>& out)
     {
         using type_1 = space_1;
         using type_2 = space_2;
@@ -510,12 +534,14 @@ namespace color
             out.g = gamma_2::gamma::linear_to_gamma(vec.a[1], gamma_2(), typename model_2::G_value());
             out.b = gamma_2::gamma::linear_to_gamma(vec.a[2], gamma_2(), typename model_2::B_value());
         }
+
+        convert_alpha(in, out);
     }
 
     ///generic RGB -> XYZ
-    template<typename space, typename model, typename gamma>
+    template<typename space, typename model, typename gamma, typename alpha>
     inline
-    constexpr void color_convert(const basic_color<generic_RGB_space<space, gamma>, model>& in, basic_color<XYZ_space, XYZ_model>& out)
+    constexpr void color_convert(const basic_color<generic_RGB_space<space, gamma>, model, alpha>& in, basic_color<XYZ_space, XYZ_model, alpha>& out)
     {
         using type = space;
 
@@ -532,9 +558,9 @@ namespace color
     }
 
     ///XYZ -> generic RGB
-    template<typename space, typename model, typename gamma>
+    template<typename space, typename model, typename gamma, typename alpha>
     inline
-    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model>& in, basic_color<generic_RGB_space<space, gamma>, model>& out)
+    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha>& in, basic_color<generic_RGB_space<space, gamma>, model, alpha>& out)
     {
         using type = space;
 
@@ -563,9 +589,9 @@ namespace color
 
     ///TODO: Conversions with alpha between different colour spaces do not work
     ///TODO: Should remember original base type when adl'ing users types
-    template<typename space_1, typename model_1, typename... tags_1, typename space_2, typename model_2, typename... tags_2, typename... Args>
+    template<typename space_1, typename model_1, typename alpha_1, typename... tags_1, typename space_2, typename model_2, typename alpha_2, typename... tags_2, typename... Args>
     inline
-    constexpr void convert_impl(const basic_color<space_1, model_1, tags_1...>& in, basic_color<space_2, model_2, tags_2...>& out, Args&&... args)
+    constexpr void convert_impl(const basic_color<space_1, model_1, alpha_1, tags_1...>& in, basic_color<space_2, model_2, alpha_2, tags_2...>& out, Args&&... args)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
@@ -578,6 +604,7 @@ namespace color
             return;
         }
 
+        #if 0
         if constexpr(same_space && same_tags)
         {
             const model_1& base_model = in;
@@ -599,6 +626,7 @@ namespace color
             return;
         }
         else
+        #endif // 0
         {
             if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
             {
@@ -606,7 +634,7 @@ namespace color
             }
             else
             {
-                basic_color<XYZ_space, XYZ_model> intermediate;
+                basic_color<XYZ_space, XYZ_model, alpha_1> intermediate;
                 color_convert(in, intermediate, std::forward<Args>(args)...);
                 color_convert(intermediate, out); ///TODO: Args2...
             }

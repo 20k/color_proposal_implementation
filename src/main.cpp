@@ -27,7 +27,7 @@ struct P3_transfer_parameters
 
 using P3_space = color::generic_RGB_space<P3_parameters, P3_transfer_parameters>;
 
-struct P3_float : color::basic_color<P3_space, color::RGB_float_model>
+struct P3_float : color::basic_color<P3_space, color::RGB_float_model, color::no_alpha>
 {
     constexpr P3_float(float _r, float _g, float _b) {r = _r; g = _g; b = _b;}
     constexpr P3_float(){}
@@ -58,7 +58,7 @@ struct adobe_RGB_98_transfer_parameters
 using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters, adobe_RGB_98_transfer_parameters>;
 //using adobe_float = color::basic_color<adobe_space, color::RGB_float_model>;
 
-struct adobe_float : color::basic_color<adobe_space, color::RGB_float_model>
+struct adobe_float : color::basic_color<adobe_space, color::RGB_float_model, color::no_alpha>
 {
     constexpr adobe_float(float _r, float _g, float _b) {r = _r; g = _g; b = _b;}
     constexpr adobe_float(){}
@@ -80,7 +80,7 @@ struct weirdo_float_model : color::RGB_model<weirdo_float_value, weirdo_float_va
 
 };
 
-struct weirdo_linear_space : color::basic_color<color::linear_sRGB_space, weirdo_float_model>
+struct weirdo_linear_space : color::basic_color<color::linear_sRGB_space, weirdo_float_model, color::no_alpha>
 {
     constexpr weirdo_linear_space(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
     constexpr weirdo_linear_space(){}
@@ -96,13 +96,13 @@ struct fully_custom_colorspace
     static inline constexpr temporary::matrix_3x3 impl_XYZ_to_linear = color::sRGB_parameters::XYZ_to_linear;
 };
 
-struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::RGB_float_model>
+struct fully_custom_color : color::basic_color<fully_custom_colorspace, color::RGB_float_model, color::no_alpha>
 {
     constexpr fully_custom_color(float _r, float _g, float _b){r = _r; g = _g; b = _b;}
     constexpr fully_custom_color(){}
 };
 
-void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>& in, color::basic_color<fully_custom_colorspace, color::RGB_float_model>& out, fully_custom_colorspace& full)
+void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, color::no_alpha>& in, color::basic_color<fully_custom_colorspace, color::RGB_float_model, color::no_alpha>& out, fully_custom_colorspace& full)
 {
     printf("Custom data v1 v2 %f %f\n", full.value, full.value2);
 
@@ -113,7 +113,7 @@ void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model>&
     out.b = transformed.a[2];
 }
 
-void color_convert(const color::basic_color<fully_custom_colorspace, color::RGB_float_model>& in, color::basic_color<color::XYZ_space, color::XYZ_model>& out, fully_custom_colorspace& full)
+void color_convert(const color::basic_color<fully_custom_colorspace, color::RGB_float_model, color::no_alpha>& in, color::basic_color<color::XYZ_space, color::XYZ_model, color::no_alpha>& out, fully_custom_colorspace& full)
 {
     printf("Custom data v1 v2 %f %f\n", full.value, full.value2);
 
@@ -205,6 +205,8 @@ void tests()
     }
 
     {
+        static_assert(color::has_optimised_conversion<color::sRGBA_uint8, color::sRGBA_float>());
+
         color::sRGBA_uint8 t1(255, 127, 80, 230);
 
         color::sRGBA_float t2 = color::convert<color::sRGBA_float>(t1);
