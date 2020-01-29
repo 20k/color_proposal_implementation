@@ -356,14 +356,28 @@ namespace color
         using R_value = V1;
         using G_value = V2;
         using B_value = V3;
+
+        constexpr RGB_model(typename V1::type _r, typename V2::type _g, typename V3::type _b) : r(_r), g(_g), b(_b){}
+        constexpr RGB_model(){}
     };
 
     ///Todo: Due to the way this is specified, it is too easy
     ///To accidentally convert RGBA to RGB. Needs fixing
-    template<typename T, typename U, typename V, typename A>
-    struct RGBA_model : RGB_model<T, U, V>, alpha_model<A>
+    template<typename V1, typename V2, typename V3, typename V4>
+    struct RGBA_model : basic_color_model
     {
+        typename V1::type r = typename V1::type();
+        typename V2::type g = typename V2::type();
+        typename V3::type b = typename V3::type();
+        typename V4::type a = typename V4::type();
 
+        using R_value = V1;
+        using G_value = V2;
+        using B_value = V3;
+        using A_value = V4;
+
+        constexpr RGBA_model(typename V1::type _r, typename V2::type _g, typename V3::type _b, typename V4::type _a) : r(_r), g(_g), b(_b), a(_a){}
+        constexpr RGBA_model(){}
     };
 
     struct XYZ_model : basic_color_model
@@ -373,34 +387,20 @@ namespace color
         float Z = 0;
     };
 
-    struct RGB_uint8_model : RGB_model<uint8_value_model, uint8_value_model, uint8_value_model>
-    {
-
-    };
-
-    struct RGB_float_model : RGB_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>
-    {
-
-    };
-
-    struct RGBA_uint8_model : RGBA_model<uint8_value_model, uint8_value_model, uint8_value_model, uint8_value_model>
-    {
-
-    };
-
-    struct RGBA_float_model : RGBA_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>
-    {
-
-    };
+    using RGB_uint8_model = RGB_model<uint8_value_model, uint8_value_model, uint8_value_model>;
+    using RGB_float_model = RGB_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>;
+    using RGBA_uint8_model = RGBA_model<uint8_value_model, uint8_value_model, uint8_value_model, uint8_value_model>;
+    using RGBA_float_model = RGBA_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>;
 
     template<typename cspace, typename cmodel, typename... tags>
     struct basic_color : cmodel, tags...
     {
         using space_type = cspace;
         using model_type = cmodel;
+        using cmodel::cmodel;
     };
 
-    struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
+    /*struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model>
     {
         constexpr sRGB_uint8(uint8_t _r, uint8_t _g, uint8_t _b){r = _r; g = _g; b = _b;}
         constexpr sRGB_uint8(){}
@@ -440,7 +440,15 @@ namespace color
     {
         constexpr XYZ(float _X, float _Y, float _Z){X = _X; Y = _Y; Z = _Z;}
         constexpr XYZ(){}
-    };
+    };*/
+
+    using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
+    using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
+    using sRGBA_uint8 = basic_color<sRGB_space, RGBA_uint8_model>;
+    using sRGBA_float = basic_color<sRGB_space, RGBA_float_model>;
+    using linear_sRGB_float = basic_color<linear_sRGB_space, RGB_float_model>;
+    using linear_sRGBA_float = basic_color<linear_sRGB_space, RGBA_float_model>;
+    using XYZ = basic_color<XYZ_space, XYZ_model>;
 
     ///TODO: the only reason this exists is for alpha
     ///once alpha is handled, this can and will go away
