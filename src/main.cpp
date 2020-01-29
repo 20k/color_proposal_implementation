@@ -168,6 +168,19 @@ void tests()
     }
 
     {
+        constexpr color::linear_sRGBA_float linear(1, 1, 0.5, 200/255.f);
+
+        constexpr color::sRGBA_uint8 srgb = color::convert<color::sRGBA_uint8>(linear);
+
+        static_assert(color::has_optimised_conversion<color::linear_sRGBA_float, color::sRGBA_uint8>());
+
+        static_assert(approx_equal(srgb.r, 255));
+        static_assert(approx_equal(srgb.g, 255));
+        static_assert(approx_equal(srgb.b, 188));
+        static_assert(approx_equal(srgb.a, 200));
+    }
+
+    {
         fully_custom_colorspace colour_instance;
         colour_instance.value = 53;
         colour_instance.value2 = 999;

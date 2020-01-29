@@ -447,7 +447,7 @@ namespace color
         constexpr linear_sRGB_float(){}
     };
 
-    struct linear_sRGBA_float : basic_color<linear_sRGBA_float, RGB_float_model, float_alpha>
+    struct linear_sRGBA_float : basic_color<linear_sRGB_space, RGB_float_model, float_alpha>
     {
         constexpr linear_sRGBA_float(float _r, float _g, float _b, float _a){r = _r; g = _g; b = _b; a = _a;}
         constexpr linear_sRGBA_float(){}
