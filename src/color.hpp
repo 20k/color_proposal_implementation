@@ -597,10 +597,10 @@ namespace color
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
-        //constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
+        constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
         constexpr bool same_tags = (std::is_same_v<tags_1, tags_2> && ...);
 
-        if constexpr(same_space && same_model && same_tags)
+        if constexpr(same_space && same_model && same_alpha && same_tags)
         {
             out = in;
             return;
