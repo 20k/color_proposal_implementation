@@ -589,7 +589,6 @@ namespace color
         return has_direct_conversion_c<T, U>::value;
     }
 
-    ///TODO: Conversions with alpha between different colour spaces do not work
     ///TODO: Should remember original base type when adl'ing users types
     template<typename space_1, typename model_1, typename alpha_1, typename space_2, typename model_2, typename alpha_2, typename... Args>
     inline
