@@ -306,6 +306,7 @@ namespace color
         static constexpr chromaticity B{0.15, 0.06};
         static constexpr chromaticity W = illuminant::CIE1931::D65;
 
+        ///TODO: need to use rounded sRGB parameters from the spec rather than calculating them
         static constexpr temporary::matrix_3x3 linear_to_XYZ = get_linear_RGB_to_XYZ(R, G, B, W);
         static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
     };
