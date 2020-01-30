@@ -472,15 +472,7 @@ namespace color
             model_convert_member<T1, T2>(in.a, out.a);
     }
 
-    /*using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
-    using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
-    using sRGBA_uint8 = basic_color<sRGB_space, RGBA_uint8_model>;
-    using sRGBA_float = basic_color<sRGB_space, RGBA_float_model>;
-    using linear_sRGB_float = basic_color<linear_sRGB_space, RGB_float_model>;
-    using linear_sRGBA_float = basic_color<linear_sRGB_space, RGBA_float_model>;
-    using XYZ = basic_color<XYZ_space, XYZ_model>;*/
-
-    /*template<typename T1, typename U1, typename V1,
+    template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
     constexpr void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
@@ -490,6 +482,15 @@ namespace color
         model_convert_member<V1, V2>(in.b, out.b);
     }
 
+    /*using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
+    using sRGB_float = basic_color<sRGB_space, RGB_float_model>;
+    using sRGBA_uint8 = basic_color<sRGB_space, RGBA_uint8_model>;
+    using sRGBA_float = basic_color<sRGB_space, RGBA_float_model>;
+    using linear_sRGB_float = basic_color<linear_sRGB_space, RGB_float_model>;
+    using linear_sRGBA_float = basic_color<linear_sRGB_space, RGBA_float_model>;
+    using XYZ = basic_color<XYZ_space, XYZ_model>;*/
+
+    /*
     template<typename T1, typename U1, typename V1, typename W1,
              typename T2, typename U2, typename V2, typename W2>
     inline
@@ -509,29 +510,37 @@ namespace color
         using type_1 = space_1;
         using type_2 = space_2;
 
-        ///Lin currently is always floats
-        auto lin_r = gamma_1::gamma::gamma_to_linear(in.r, gamma_1(), typename model_1::R_value());
-        auto lin_g = gamma_1::gamma::gamma_to_linear(in.g, gamma_1(), typename model_1::G_value());
-        auto lin_b = gamma_1::gamma::gamma_to_linear(in.b, gamma_1(), typename model_1::B_value());
-
-        ///do not care about model
-        if constexpr(std::is_same_v<space_1, space_2>)
+        ///different models and alpha
+        if constexpr(std::is_same_v<space_1, space_2> && std::is_same_v<gamma_1, gamma_2>)
         {
-            out.r = gamma_2::gamma::linear_to_gamma(lin_r, gamma_2(), typename model_2::R_value());
-            out.g = gamma_2::gamma::linear_to_gamma(lin_g, gamma_2(), typename model_2::G_value());
-            out.b = gamma_2::gamma::linear_to_gamma(lin_b, gamma_2(), typename model_2::B_value());
+            model_convert(in, out);
         }
         else
         {
-            auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
+            ///Lin currently is always floats
+            auto lin_r = gamma_1::gamma::gamma_to_linear(in.r, gamma_1(), typename model_1::R_value());
+            auto lin_g = gamma_1::gamma::gamma_to_linear(in.g, gamma_1(), typename model_1::G_value());
+            auto lin_b = gamma_1::gamma::gamma_to_linear(in.b, gamma_1(), typename model_1::B_value());
 
-            ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
-            ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
-            auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+            ///do not care about model
+            if constexpr(std::is_same_v<space_1, space_2>)
+            {
+                out.r = gamma_2::gamma::linear_to_gamma(lin_r, gamma_2(), typename model_2::R_value());
+                out.g = gamma_2::gamma::linear_to_gamma(lin_g, gamma_2(), typename model_2::G_value());
+                out.b = gamma_2::gamma::linear_to_gamma(lin_b, gamma_2(), typename model_2::B_value());
+            }
+            else
+            {
+                auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
 
-            out.r = gamma_2::gamma::linear_to_gamma(vec.a[0], gamma_2(), typename model_2::R_value());
-            out.g = gamma_2::gamma::linear_to_gamma(vec.a[1], gamma_2(), typename model_2::G_value());
-            out.b = gamma_2::gamma::linear_to_gamma(vec.a[2], gamma_2(), typename model_2::B_value());
+                ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
+                ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
+                auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r, lin_g, lin_b});
+
+                out.r = gamma_2::gamma::linear_to_gamma(vec.a[0], gamma_2(), typename model_2::R_value());
+                out.g = gamma_2::gamma::linear_to_gamma(vec.a[1], gamma_2(), typename model_2::G_value());
+                out.b = gamma_2::gamma::linear_to_gamma(vec.a[2], gamma_2(), typename model_2::B_value());
+            }
         }
 
         alpha_convert(in, out);
