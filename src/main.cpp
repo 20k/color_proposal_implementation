@@ -33,6 +33,12 @@ struct P3_float : color::basic_color<P3_space, color::RGB_float_model, color::no
     constexpr P3_float(){}
 };
 
+struct P3A_float : color::basic_color<P3_space, color::RGB_float_model, color::float_alpha>
+{
+    constexpr P3A_float(float _r, float _g, float _b, float _a) {r = _r; g = _g; b = _b; a = _a;}
+    constexpr P3A_float(){}
+};
+
 struct adobe_RGB_98_parameters
 {
     static constexpr color::chromaticity R{0.64, 0.33};
@@ -204,6 +210,19 @@ void tests()
         static_assert(approx_equal(t2.r, 0.458407));
         static_assert(approx_equal(t2.g, 0.985265));
         static_assert(approx_equal(t2.b, 0.29832));
+    }
+
+    {
+        constexpr color::sRGBA_float t1(0, 1, 0, 1);
+
+        static_assert(color::has_optimised_conversion<color::sRGBA_float, P3A_float>());
+
+        constexpr P3A_float t2 = color::convert<P3A_float>(t1);
+
+        static_assert(approx_equal(t2.r, 0.458407));
+        static_assert(approx_equal(t2.g, 0.985265));
+        static_assert(approx_equal(t2.b, 0.29832));
+        static_assert(approx_equal(t2.a, 1));
     }
 
     {

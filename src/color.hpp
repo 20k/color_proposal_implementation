@@ -334,9 +334,7 @@ namespace color
     };
 
     using sRGB_space = generic_RGB_space<sRGB_parameters, sRGB_transfer_parameters>;
-    ///TODO: linear rgb is really linear sRGB
-    ///which implies the existance of general spaces which are the linear equivalents of their
-    ///non linear cousins. Transfer parameter should probably be a separate component
+    ///'linear color' is really linear sRGB specifically
     using linear_sRGB_space = generic_RGB_space<sRGB_parameters, empty_transfer_parameters>;
 
     struct XYZ_space : basic_color_space
@@ -380,7 +378,6 @@ namespace color
         constexpr RGB_model(){}
     };
 
-    ///Todo: Alpha isn't handled correctly at all currently
     /*template<typename V1, typename V2, typename V3, typename V4>
     struct RGBA_model : basic_color_model
     {
@@ -482,8 +479,6 @@ namespace color
     using linear_sRGBA_float = basic_color<linear_sRGB_space, RGBA_float_model>;
     using XYZ = basic_color<XYZ_space, XYZ_model>;*/
 
-    ///TODO: the only reason this exists is for alpha
-    ///once alpha is handled, this can and will go away
     /*template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
     inline
@@ -554,7 +549,6 @@ namespace color
 
         auto vec = temporary::multiply(type::linear_to_XYZ, (temporary::vector_1x3){lin_r, lin_g, lin_b});
 
-        ///todo: constructors
         out.X = vec.a[0];
         out.Y = vec.a[1];
         out.Z = vec.a[2];
