@@ -408,8 +408,8 @@ namespace color
     //using RGBA_uint8_model = RGBA_model<uint8_value_model, uint8_value_model, uint8_value_model, uint8_value_model>;
     //using RGBA_float_model = RGBA_model<normalised_float_value_model, normalised_float_value_model, normalised_float_value_model, normalised_float_value_model>;
 
-    template<typename cspace, typename cmodel, typename calpha, typename... tags>
-    struct basic_color : cmodel, calpha, tags...
+    template<typename cspace, typename cmodel, typename calpha>
+    struct basic_color : cmodel, calpha
     {
         using space_type = cspace;
         using model_type = cmodel;
@@ -591,16 +591,15 @@ namespace color
 
     ///TODO: Conversions with alpha between different colour spaces do not work
     ///TODO: Should remember original base type when adl'ing users types
-    template<typename space_1, typename model_1, typename alpha_1, typename... tags_1, typename space_2, typename model_2, typename alpha_2, typename... tags_2, typename... Args>
+    template<typename space_1, typename model_1, typename alpha_1, typename space_2, typename model_2, typename alpha_2, typename... Args>
     inline
-    constexpr void convert_impl(const basic_color<space_1, model_1, alpha_1, tags_1...>& in, basic_color<space_2, model_2, alpha_2, tags_2...>& out, Args&&... args)
+    constexpr void convert_impl(const basic_color<space_1, model_1, alpha_1>& in, basic_color<space_2, model_2, alpha_2>& out, Args&&... args)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
         constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
-        constexpr bool same_tags = (std::is_same_v<tags_1, tags_2> && ...);
 
-        if constexpr(same_space && same_model && same_alpha && same_tags)
+        if constexpr(same_space && same_model && same_alpha)
         {
             out = in;
             return;
