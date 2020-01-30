@@ -350,6 +350,9 @@ namespace color
         typename VA::type a = typename VA::type();
 
         using A_value = VA;
+
+        constexpr alpha_model(typename VA::type _a){a = _a;}
+        constexpr alpha_model(){}
     };
 
     template<>
@@ -461,7 +464,7 @@ namespace color
 
     template<typename T1, typename T2>
     inline
-    constexpr void convert_alpha(const alpha_model<T1>& in, alpha_model<T2>& out)
+    constexpr void alpha_convert(const alpha_model<T1>& in, alpha_model<T2>& out)
     {
         static_assert(std::is_same_v<T1, void> == std::is_same_v<T2, void>, "Cannot drop or gain an alpha component");
 
@@ -535,13 +538,13 @@ namespace color
             out.b = gamma_2::gamma::linear_to_gamma(vec.a[2], gamma_2(), typename model_2::B_value());
         }
 
-        convert_alpha(in, out);
+        alpha_convert(in, out);
     }
 
     ///generic RGB -> XYZ
-    template<typename space, typename model, typename gamma, typename alpha>
+    template<typename space, typename model, typename gamma, typename alpha_1, typename alpha_2>
     inline
-    constexpr void color_convert(const basic_color<generic_RGB_space<space, gamma>, model, alpha>& in, basic_color<XYZ_space, XYZ_model, alpha>& out)
+    constexpr void color_convert(const basic_color<generic_RGB_space<space, gamma>, model, alpha_1>& in, basic_color<XYZ_space, XYZ_model, alpha_2>& out)
     {
         using type = space;
 
@@ -555,12 +558,14 @@ namespace color
         out.X = vec.a[0];
         out.Y = vec.a[1];
         out.Z = vec.a[2];
+
+        alpha_convert(in, out);
     }
 
     ///XYZ -> generic RGB
-    template<typename space, typename model, typename gamma, typename alpha>
+    template<typename space, typename model, typename gamma, typename alpha_1, typename alpha_2>
     inline
-    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha>& in, basic_color<generic_RGB_space<space, gamma>, model, alpha>& out)
+    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, basic_color<generic_RGB_space<space, gamma>, model, alpha_2>& out)
     {
         using type = space;
 
@@ -573,6 +578,8 @@ namespace color
         out.r = gamma::gamma::linear_to_gamma(lin_r, gamma(), typename model::R_value());
         out.g = gamma::gamma::linear_to_gamma(lin_g, gamma(), typename model::G_value());
         out.b = gamma::gamma::linear_to_gamma(lin_b, gamma(), typename model::B_value());
+
+        alpha_convert(in, out);
     }
 
     template<typename T, typename U, typename = void>
