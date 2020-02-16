@@ -152,6 +152,21 @@ struct adobe_RGB_98_transfer_parameters
     using gamma = color::transfer_function::default_parameterisation;
 };
 
+struct sRGB_approx_transfer_parameters
+{
+    static constexpr float transfer_alpha = 1;
+    static constexpr float transfer_beta = 0;
+    static constexpr float transfer_gamma = 563/256.f;
+    static constexpr float transfer_delta = 1;
+    static constexpr float transfer_bdelta = 0;
+
+    using gamma = color::transfer_function::default_parameterisation;
+};
+
+using approx_sRGB_space = color::generic_RGB_space<color::sRGB_parameters, sRGB_approx_transfer_parameters>;
+
+using approx_sRGB_uint8 = color::basic_color<approx_sRGB_space, color::RGB_uint8_model, color::no_alpha>;
+
 using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters, adobe_RGB_98_transfer_parameters>;
 //using adobe_float = color::basic_color<adobe_space, color::RGB_float_model>;
 
@@ -498,6 +513,19 @@ void tests()
         assert(approx_equal(srgb.r, 188));
         assert(approx_equal(srgb.g, 255));
         assert(approx_equal(srgb.b, 188));
+    }
+
+    {
+        color::sRGB_uint8 u1;
+        approx_sRGB_uint8 u2;
+
+        for(int i=0; i < 255; i++)
+        {
+            u1 = color::sRGB_uint8(i, i, i);
+            u2 = color::convert<approx_sRGB_uint8>(u1);
+
+            printf("Diff %i %i\n", u1.r, u2.r);
+        }
     }
 }
 
