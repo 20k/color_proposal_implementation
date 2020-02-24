@@ -617,55 +617,35 @@ namespace color
         return has_direct_conversion_c<T, U>::value;
     }
 
-    ///TODO: Should remember original base type when adl'ing users types
-    template<typename space_1, typename model_1, typename alpha_1, typename space_2, typename model_2, typename alpha_2, typename... Args>
-    inline
-    constexpr void convert_impl(const basic_color<space_1, model_1, alpha_1>& in, basic_color<space_2, model_2, alpha_2>& out, Args&&... args)
+    template<typename space_1, typename model_1, typename alpha_1, typename space_2, typename model_2, typename alpha_2>
+    constexpr bool is_same_parameterisation(const basic_color<space_1, model_1, alpha_1>& in, const basic_color<space_2, model_2, alpha_2>& out)
     {
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
         constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
 
-        if constexpr(same_space && same_model && same_alpha)
+        return same_space && same_model && same_alpha;
+    }
+
+    template<typename T1, typename T2, typename... Args>
+    inline
+    constexpr void convert_impl(const T1& in, T2& out, Args&&... args)
+    {
+        if constexpr(is_same_parameterisation(in, out))
         {
             out = in;
             return;
         }
 
-        #if 0
-        if constexpr(same_space && same_tags)
+        if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
         {
-            const model_1& base_model = in;
-            model_2& destination_model = out;
-
-            if constexpr(!same_model)
-                model_convert(base_model, destination_model);
-            else
-                destination_model = base_model;
-
-            /*const alpha_1& base_alpha = in;
-            alpha_2& destination_alpha = out;
-
-            if constexpr(!same_alpha)
-                alpha_convert(base_alpha, destination_alpha);
-            else
-                destination_alpha = base_alpha;*/
-
-            return;
+            color_convert(in, out, std::forward<Args>(args)...);
         }
         else
-        #endif // 0
         {
-            if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
-            {
-                color_convert(in, out, std::forward<Args>(args)...);
-            }
-            else
-            {
-                basic_color<XYZ_space, XYZ_model, alpha_1> intermediate;
-                color_convert(in, intermediate, std::forward<Args>(args)...);
-                color_convert(intermediate, out); ///TODO: Args2...
-            }
+            basic_color<XYZ_space, XYZ_model, typename T1::alpha_type> intermediate;
+            color_convert(in, intermediate, std::forward<Args>(args)...);
+            color_convert(intermediate, out); ///TODO: Args2...
         }
     }
 

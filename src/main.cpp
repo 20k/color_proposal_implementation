@@ -4,6 +4,31 @@
 #include <assert.h>
 #include <algorithm>
 
+struct retained_type : color::basic_color<color::linear_sRGB_space, color::RGB_float_model, color::no_alpha>
+{
+    constexpr retained_type(float _r, float _g, float _b)
+    {
+        r = _r;
+        g = _g;
+        b = _b;
+    }
+
+    constexpr retained_type()
+    {
+
+    }
+};
+
+template<typename space_1, typename model_1, typename gamma_1, typename alpha_1>
+void color_convert(const retained_type& type, color::basic_color<color::generic_RGB_space<space_1, gamma_1>, model_1, alpha_1>& out)
+{
+    auto converted = temporary::multiply(retained_type::space_type::RGB_parameters::linear_to_XYZ, (temporary::vector_1x3){type.r, type.g, type.b});
+
+    out.X = converted.a[0];
+    out.Y = converted.a[1];
+    out.Z = converted.a[2];
+}
+
 struct HSL_float_value_model
 {
     using type = float;
@@ -401,6 +426,12 @@ void tests()
         static_assert(approx_equal(cv.g, cv2.g));
         static_assert(approx_equal(cv.b, cv2.b));
         static_assert(approx_equal(cv.a, cv2.a));
+    }
+
+    {
+        constexpr retained_type rtype{1,1,1};
+
+        static_assert(color::has_optimised_conversion<retained_type, color::sRGB_uint8>());
     }
 
     {
