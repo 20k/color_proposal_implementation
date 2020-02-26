@@ -250,10 +250,6 @@ namespace color
     {
         struct default_parameterisation
         {
-            ///TODO:
-            ///can now implement gamma to linear in terms of a lookup table for uint8_ts, or arbitrary integer values
-            ///cannot implement high precision (or reduce precision, if you're mad) intermediate values
-            ///ideally, gamma to linear would return a value type, as well as a value, like normalised_float_value model
             template<typename T, typename U>
             static inline constexpr
             concrete_value_model<normalised_float_value_model> gamma_to_linear(concrete_value_model<T> real_component, const U& in)
