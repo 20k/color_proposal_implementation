@@ -545,19 +545,6 @@ void tests()
         assert(approx_equal(srgb.g, 255));
         assert(approx_equal(srgb.b, 188));
     }
-
-    {
-        color::sRGB_uint8 u1;
-        approx_sRGB_uint8 u2;
-
-        for(int i=0; i < 255; i++)
-        {
-            u1 = color::sRGB_uint8(i, i, i);
-            u2 = color::convert<approx_sRGB_uint8>(u1);
-
-            printf("Diff %i %i\n", u1.r, u2.r);
-        }
-    }
 }
 
 int main()
