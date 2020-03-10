@@ -658,6 +658,37 @@ namespace color
     ///Runtime defined generic RGB space optimisation
     ///TODO:
     ///Is it legal to let a user overload this and stuff information into the struct?
+
+    ///Details on runtime RGB stuff
+    ///1. A naive conversion is very easy to do.
+    ///Take a colour, apply the inverse of the gamma function with dynamic parameterisation
+    ///multiply that with its toXYZ matrix
+    ///multiply that with the destination fromXYZ matrix
+    ///apply destination transform
+
+    ///Optimisations that can be applied:
+    ///1. Do nothing. Code will run much slower than static spaces
+    ///2. When converting from floating point model colour space to floating point model colour space, the intermediate matrices can be combined, saving a multiplication
+    ///3. When converting from ints to floating point, a lookup table could be used, which is as large as the start space - extremely fast
+    ///4. When converting from floating point to ints, a lookup table can be used - very fast, though requires a larger lookup table than above and harder to get right
+
+    ///If the set of optimisations is not the same as the set of optimisations applied by colour spaces with known compile time parameters (which are very easy to do)
+    ///The following will result
+    ///1. Implementation divergence
+    ///2. Runtime vs compile time colour space result divergence, which is extremely confusing
+    ///This is by far not the common case, however it is somewhat suboptimal
+
+    ///For all the optimisation strategies, there is a tradeoff in space to store the data, and in some cases time to create the lookup tables
+    ///This means that we may want some sort of converter state object, that holds 'misc' arbitrary state
+
+    ///The problem with the above is that it complicates the general case, as for compile time colour spaces you have to do
+    ///color::converter_state<src_space, dst_space> ccs(optimisation_type); dst_space res = ccs.convert(src_col);
+
+    ///Even though ccs will be empty, because the optimisation will be dynamically calculated at compile time in ccs.convert, so no stack space is used assuming [[no_unique_address]]
+
+    ///On the other hand, doing it like this does completely nail down implementation divergence, and provides a uniform API
+    ///Would have to ensure that users didn't specify wrong combinations, eg float -> float table lookup
+
     template<typename destination, typename source, typename... T>
     struct connector
     {
