@@ -689,6 +689,13 @@ namespace color
     ///On the other hand, doing it like this does completely nail down implementation divergence, and provides a uniform API
     ///Would have to ensure that users didn't specify wrong combinations, eg float -> float table lookup
 
+    ///These issues all become more pronounced with ICC support planned in the future, as converting to and from a device dependent colour space is likely fairly expensive
+    ///but could be implement with decent precision and good performance with eg a 16 bit -> 16 bit table lookup in a lot of cases, once generated (expensive!)
+    ///Fully custom user stuff could easily have int -> float or int -> int support added as a simple lookup. Float -> int support is significantly harder but theoretically doable
+    ///Float -> float automatic matrix combination for non RGB derived types that still somehow have a valid matrix combination step may be a sore spot, but given the extreme rarity of this case, overloading the converter object and storing it yourself may be acceptable
+
+    ///All in all, a bit of a mess, but a solvable one
+
     template<typename destination, typename source, typename... T>
     struct connector
     {
