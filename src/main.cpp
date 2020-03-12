@@ -434,7 +434,7 @@ void tests()
         static_assert(color::has_optimised_conversion<retained_type, color::sRGB_uint8>());
     }
 
-    {
+    /*{
         fully_custom_colorspace colour_instance;
         colour_instance.value = 53;
         colour_instance.value2 = 999;
@@ -453,7 +453,7 @@ void tests()
         color::linear_sRGB_float converted2 = color::convert<color::linear_sRGB_float>(ccol, colour_instance);
 
         printf("Found2 %f %f %f\n", converted2.r, converted2.g, converted2.b);
-    }
+    }*/
 
     {
         color::sRGB_uint8 val3(255, 127, 80);
