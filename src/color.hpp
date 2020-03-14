@@ -207,6 +207,7 @@ namespace color
 
     ///min and max are clamp values
     ///to convert to this models space, a normalised float value is multiplied by scale, and then base is added
+
     struct normalised_float_value_model
     {
         using type = float;
@@ -369,7 +370,7 @@ namespace color
     using no_alpha = alpha_model<void>;
 
     /// SO THINK I FINALLY HAVE A RESOLUTION
-    /// For RGB models, make them an array
+    /// For RGB models, make them a tuple
     /// Implement mod.get(idx), or std::get<N>(type)
     /// Then, in composite model, implement mod.get(idx), where idx > first base = second base. Generic model combiner
     /// Then we have introspection over value models if we get value models out, or use traits and specialise (?). Kind of hate traits though
@@ -434,7 +435,7 @@ namespace color
     };
 
     template<typename T, typename U>
-    struct composite_model
+    struct composite_model : T, U
     {
 
     };
@@ -523,26 +524,11 @@ namespace color
         model_convert_member<W1, W2>(in.a, out.a);
     }*/
 
-    template<typename T>
-    struct is_separable_colorspace : std::false_type {};
-
-    template<typename space, typename model, typename gamma, typename alpha>
-    struct is_separable_colorspace<basic_color<generic_RGB_space<space, gamma>, model, alpha>> : std::true_type {};
-
-    template<typename model, typename alpha>
-    struct is_separable_colorspace<basic_color<XYZ_space, model, alpha>> : std::true_type {};
-
-    template<typename T>
-    using is_separable_colorspace_v = typename is_separable_colorspace<T>::value;
-
     ///direct conversion between two arbitrary RGB space
     template<typename space_1, typename model_1, typename gamma_1, typename alpha_1, typename space_2, typename model_2, typename gamma_2, typename alpha_2>
     inline
     constexpr void color_convert(const basic_color<generic_RGB_space<space_1, gamma_1>, model_1, alpha_1>& in, basic_color<generic_RGB_space<space_2, gamma_2>, model_2, alpha_2>& out)
     {
-        using type_1 = space_1;
-        using type_2 = space_2;
-
         ///different models and alpha
         if constexpr(std::is_same_v<space_1, space_2> && std::is_same_v<gamma_1, gamma_2>)
         {
@@ -568,7 +554,7 @@ namespace color
             }
             else
             {
-                auto combo_convert = temporary::multiply(type_2::XYZ_to_linear, type_1::linear_to_XYZ);
+                auto combo_convert = temporary::multiply(space_2::XYZ_to_linear, space_1::linear_to_XYZ);
 
                 ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
                 ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
@@ -752,73 +738,146 @@ namespace color
         return ret;
     }*/
 
-    namespace optimisation
-    {
-        enum type
-        {
-            NONE = 0,
-            TABLE = 1, ///Precompute table lookups where appropriate, eg int -> float, or float -> int
-            MERGE = 2, ///Pre-merge applicable intermediate results, eg matrix1 * matrix2
-        };
-    }
-
-    ///Default case
-    template<typename destination, typename source, optimisation::type type, typename... user_args>
-    struct converter
-    {
-        std::tuple<user_args...> args;
-
-        template<typename... U>
-        converter(U&&... in) : args(std::forward<U>(in)...){}
-
-        constexpr destination convert(const source& in)
-        {
-            auto cvt = [&](auto&&... params)
-            {
-                return color::convert<destination, source, user_args...>(in, std::forward<decltype(params)>(params)...);
-            };
-
-            return std::apply(cvt, args);
-        }
-    };
-
-    template<typename T, typename U>
-    inline
-    constexpr int get_value_lookup_table_size(const concrete_value_model<T>& in)
-    {
-        static_assert(!(std::is_floating_point_v<T> && std::is_floating_point_v<typename U::type>), "Input and output cannot both be floating point");
-
-        if constexpr(std::is_integral_v<T>)
-        {
-            return concrete_value_model<T>::type::max - concrete_value_model<T>::type::min;
-        }
-
-        if constexpr(std::is_floating_point_v<T>)
-        {
-            ///Need to do more maths to figure out if this case is usufully calculable in the general case
-            return 0;
-        }
-
-        return 0;
-    }
-
-    //auto calculate_value_lookup_table
-
-    /*template<typename T, std::size_t N, typename color_type>
-    inline
-    constexpr std::array<T, N> generate_source_table_for()
-    {
-        return std::array
-    }*/
-
-    template<typename destination, typename source, typename... user_args>
-    struct converter<destination, source, optimisation::TABLE, user_args...>
-    {
-
-    };
-
     ///TODO: reinterpret_color_space
     ///Should ignore colour space, but not ignore colour model
+
+    ///TODO: complete overload set
+    template<size_t N, typename T, typename U, typename V>
+    constexpr std::tuple_element_t<N, color::RGB_model<T, U, V>>& get(color::RGB_model<T, U, V>& v) noexcept
+    {
+        if constexpr(N == 0)
+            return v.r;
+
+        if constexpr(N == 1)
+            return v.g;
+
+        if constexpr(N == 2)
+            return v.b;
+    }
+
+    template<size_t N, typename T, typename U, typename V>
+    constexpr std::tuple_element_t<N, color::RGB_model<T, U, V>>&& get(color::RGB_model<T, U, V>&& v) noexcept
+    {
+        if constexpr(N == 0)
+            return std::move(v.r);
+
+        if constexpr(N == 1)
+            return std::move(v.g);
+
+        if constexpr(N == 2)
+            return std::move(v.b);
+    }
+
+    template<size_t N, typename T, typename U, typename V>
+    constexpr const std::tuple_element_t<N, color::RGB_model<T, U, V>>&& get(const color::RGB_model<T, U, V>&& v) noexcept
+    {
+        if constexpr(N == 0)
+            return std::move(v.r);
+
+        if constexpr(N == 1)
+            return std::move(v.g);
+
+        if constexpr(N == 2)
+            return std::move(v.b);
+    }
+
+    template<size_t N, typename T, typename U, typename V>
+    constexpr const std::tuple_element_t<N, color::RGB_model<T, U, V>>& get(const color::RGB_model<T, U, V>& v) noexcept
+    {
+        if constexpr(N == 0)
+            return v.r;
+
+        if constexpr(N == 1)
+            return v.g;
+
+        if constexpr(N == 2)
+            return v.b;
+    }
+
+    template<size_t N, typename T>
+    constexpr std::tuple_element_t<N, color::alpha_model<T>>& get(color::alpha_model<T>& v) noexcept
+    {
+        if constexpr(N == 0)
+            return v.a;
+    }
+
+    template<size_t N, typename T>
+    constexpr std::tuple_element_t<N, color::alpha_model<T>>&& get(color::alpha_model<T>&& v) noexcept
+    {
+        if constexpr(N == 0)
+            return std::move(v.a);
+    }
+
+    template<size_t N, typename T>
+    constexpr const std::tuple_element_t<N, color::alpha_model<T>>& get(const color::alpha_model<T>& v) noexcept
+    {
+        if constexpr(N == 0)
+            return v.a;
+    }
+
+    template<size_t N>
+    constexpr void get(const color::alpha_model<void>& v) noexcept
+    {
+
+    }
+
+    template<size_t N>
+    constexpr void get(const color::alpha_model<void>&& v) noexcept
+    {
+
+    }
+
+    /*template<size_t N, typename T, typename V>
+    constexpr auto get(color::composite_model<T, V>& v)
+    {
+        if constexpr(N >= std::tuple_size_v<T>)
+            return get<N - std::tuple_size_v<T>>((V&)v);
+
+        return get<N>((T&)v);
+    }
+
+    template<size_t N, typename T, typename V>
+    constexpr auto get(const color::composite_model<T, V>& v)
+    {
+        if constexpr(N >= std::tuple_size_v<T>)
+            return get<N - std::tuple_size_v<T>>((V&)v);
+
+        return get<N>((T&)v);
+    }*/
 }
+
+template<typename T, typename U, typename V>
+struct std::tuple_size<color::RGB_model<T, U, V>> : std::integral_constant<std::size_t, 3>{};
+
+template<typename T>
+struct std::tuple_size<color::alpha_model<T>> : std::integral_constant<std::size_t, 1>{};
+
+template<>
+struct std::tuple_size<color::alpha_model<void>> : std::integral_constant<std::size_t, 0>{};
+
+template<typename T, typename U>
+struct std::tuple_size<color::composite_model<T, U>> : std::integral_constant<std::size_t, std::tuple_size_v<T> + std::tuple_size_v<U>>{};
+
+template<typename T, typename U, typename V>
+struct std::tuple_element<0, color::RGB_model<T, U, V>> {using type = typename T::type;};
+
+template<typename T, typename U, typename V>
+struct std::tuple_element<1, color::RGB_model<T, U, V>> {using type = typename U::type;};
+
+template<typename T, typename U, typename V>
+struct std::tuple_element<2, color::RGB_model<T, U, V>> {using type = typename V::type;};
+
+template<typename T>
+struct std::tuple_element<0, color::alpha_model<T>> {using type = typename T::type;};
+
+template<size_t I, typename T, typename U>
+struct std::tuple_element<I, color::composite_model<T, U>>
+{
+    using type =
+    std::conditional_t<
+        I >= std::tuple_size_v<T>,
+        std::tuple_element_t<I - std::tuple_size_v<T>, U>,
+        std::tuple_element_t<I, T>>;
+};
 
 #endif // COLOR_HPP_INCLUDED

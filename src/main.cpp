@@ -3,6 +3,7 @@
 #include "color.hpp"
 #include <assert.h>
 #include <algorithm>
+#include <tuple>
 
 struct retained_type : color::basic_color<color::linear_sRGB_space, color::RGB_float_model, color::no_alpha>
 {
@@ -544,6 +545,16 @@ void tests()
         assert(approx_equal(srgb.r, 188));
         assert(approx_equal(srgb.g, 255));
         assert(approx_equal(srgb.b, 188));
+    }
+
+    {
+        static_assert(std::tuple_size_v<color::RGB_model<color::uint8_value_model, color::uint8_value_model, color::uint8_value_model>> == 3);
+
+        color::RGB_model<color::uint8_value_model, color::uint8_value_model, color::uint8_value_model> model{255, 255, 255};
+
+        auto [x, y, z] = model;
+
+        printf("%i\n", x);
     }
 }
 
