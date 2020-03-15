@@ -632,6 +632,9 @@ namespace color
     template<typename space_1, typename model_1, typename alpha_1, typename space_2, typename model_2, typename alpha_2>
     constexpr bool is_same_parameterisation(const basic_color<space_1, model_1, alpha_1>& in, const basic_color<space_2, model_2, alpha_2>& out)
     {
+        (void)in;
+        (void)out;
+
         constexpr bool same_space = std::is_same_v<space_1, space_2>;
         constexpr bool same_model = std::is_same_v<model_1, model_2>;
         constexpr bool same_alpha = std::is_same_v<alpha_1, alpha_2>;
