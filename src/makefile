@@ -7,9 +7,9 @@ BUILD_PATH = objs
 
 EXE = out.exe
 
-INCLUDES = 
+INCLUDES = -I.
 
-SOURCES = main.cpp
+SOURCES = main.cpp tests/HSL.cpp
 
 DEFS =
 LIBS = 
