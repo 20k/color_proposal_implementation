@@ -1,6 +1,7 @@
 #pragma once
 
 #include <color.hpp>
+#include <math.h>
 
 struct HSL_float_value_model
 {
