@@ -712,6 +712,8 @@ namespace color
 
     ///All in all, a bit of a mess, but a solvable one
 
+    ///So: Tabulation is only necessary in the case of gamma -> linear. Tabulating 24bit rgb -> something else would be 16MB * sizeof(destination) ram... which isn't totally unacceptable in some cases
+
     /*template<typename destination, typename source, typename... T>
     struct connector
     {
