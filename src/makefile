@@ -9,7 +9,7 @@ EXE = out.exe
 
 INCLUDES = -I.
 
-SOURCES = main.cpp tests/HSL.cpp tests/P3.cpp tests/adobe_RGB_98.cpp tests/0_255_linear.cpp tests/slow_sRGB.cpp
+SOURCES = main.cpp tests/HSL.cpp tests/P3.cpp tests/adobe_RGB_98.cpp tests/0_255_linear.cpp tests/slow_sRGB.cpp tests/runtime_RGB.cpp
 
 DEFS =
 LIBS = 

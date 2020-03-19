@@ -109,6 +109,17 @@ namespace temporary
     struct vector_1x3
     {
         float a[3] = {0};
+
+        constexpr
+        vector_1x3(float v1, float v2, float v3)
+        {
+            a[0] = v1;
+            a[1] = v2;
+            a[2] = v3;
+        }
+
+        constexpr
+        vector_1x3(){}
     };
 
     constexpr vector_1x3 multiply(const matrix_3x3& one, const vector_1x3& vec)
@@ -248,6 +259,12 @@ namespace color
         using type = T;
     };
 
+    ///So gamma and associated customisation is currently done all wrong, as it assumes overloading on value models
+    ///Things a user needs to be able to do:
+    ///1. Overload the default transfer function for their type for all conversions for built in spaces (can already do by changing gamma)
+    ///2. Overload every transfer function for a particular model conversion, regardless of the space
+    ///3. Call a transfer function vanilla
+    ///4. Overload transfer function
     namespace transfer_function
     {
         struct default_parameterisation
@@ -265,6 +282,7 @@ namespace color
                     return {std::pow((component + in.transfer_alpha - 1) / in.transfer_alpha, in.transfer_gamma)};
             }
 
+            //This is only correct for float value models [0 -> 1]
             template<typename U, typename value_model, typename model_in>
             static inline constexpr
             concrete_value_model<value_model> linear_to_gamma(concrete_value_model<model_in> component, const U& in, value_model tag)
@@ -558,7 +576,7 @@ namespace color
 
                 ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
                 ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
-                auto vec = temporary::multiply(combo_convert, (temporary::vector_1x3){lin_r.v, lin_g.v, lin_b.v});
+                auto vec = temporary::multiply(combo_convert, temporary::vector_1x3{lin_r.v, lin_g.v, lin_b.v});
 
                 decltype(lin_r) o_r{vec.a[0]};
                 decltype(lin_g) o_g{vec.a[1]};
@@ -588,7 +606,7 @@ namespace color
         auto lin_g = gamma::gamma::gamma_to_linear(gv, gamma());
         auto lin_b = gamma::gamma::gamma_to_linear(bv, gamma());
 
-        auto vec = temporary::multiply(type::linear_to_XYZ, (temporary::vector_1x3){lin_r.v, lin_g.v, lin_b.v});
+        auto vec = temporary::multiply(type::linear_to_XYZ, temporary::vector_1x3{lin_r.v, lin_g.v, lin_b.v});
 
         model_convert_member<typename decltype(lin_r)::type, normalised_float_value_model>(vec.a[0], out.X);
         model_convert_member<typename decltype(lin_g)::type, normalised_float_value_model>(vec.a[1], out.Y);
@@ -604,7 +622,7 @@ namespace color
     {
         using type = space;
 
-        auto vec = temporary::multiply(type::XYZ_to_linear, (temporary::vector_1x3){in.X, in.Y, in.Z});
+        auto vec = temporary::multiply(type::XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
         concrete_value_model<normalised_float_value_model> c1{vec.a[0]};
         concrete_value_model<normalised_float_value_model> c2{vec.a[1]};

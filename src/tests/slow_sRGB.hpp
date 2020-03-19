@@ -39,7 +39,7 @@ template<typename A1, typename A2>
 constexpr inline
 void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, A1>& in, color::basic_color<slow_sRGB_space, slow_sRGB_model, A2>& out)
 {
-    auto transformed = temporary::multiply(slow_sRGB_space::impl_XYZ_to_linear, (temporary::vector_1x3){in.X, in.Y, in.Z});
+    auto transformed = temporary::multiply(slow_sRGB_space::impl_XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
     out.r = transformed.a[0];
     out.g = transformed.a[1];
@@ -52,7 +52,7 @@ template<typename A1, typename A2>
 constexpr inline
 void color_convert(const color::basic_color<slow_sRGB_space, slow_sRGB_model, A1>& in, color::basic_color<color::XYZ_space, color::XYZ_model, A2>& out)
 {
-    auto transformed = temporary::multiply(slow_sRGB_space::impl_linear_to_XYZ, (temporary::vector_1x3){in.r, in.g, in.b});
+    auto transformed = temporary::multiply(slow_sRGB_space::impl_linear_to_XYZ, temporary::vector_1x3{in.r, in.g, in.b});
 
     out.X = transformed.a[0];
     out.Y = transformed.a[1];

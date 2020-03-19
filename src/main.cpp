@@ -29,7 +29,7 @@ struct retained_type : color::basic_color<color::linear_sRGB_space, color::RGB_f
 template<typename space_1, typename model_1, typename gamma_1, typename alpha_1>
 void color_convert(const retained_type& type, color::basic_color<color::generic_RGB_space<space_1, gamma_1>, model_1, alpha_1>& out)
 {
-    auto converted = temporary::multiply(retained_type::space_type::RGB_parameters::linear_to_XYZ, (temporary::vector_1x3){type.r, type.g, type.b});
+    auto converted = temporary::multiply(retained_type::space_type::RGB_parameters::linear_to_XYZ, temporary::vector_1x3{type.r, type.g, type.b});
 
     out.X = converted.a[0];
     out.Y = converted.a[1];
@@ -56,7 +56,7 @@ void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, 
 {
     printf("Custom data v1 v2 %f %f\n", full.value, full.value2);
 
-    auto transformed = temporary::multiply(full.impl_XYZ_to_linear, (temporary::vector_1x3){in.X, in.Y, in.Z});
+    auto transformed = temporary::multiply(full.impl_XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
     out.r = transformed.a[0];
     out.g = transformed.a[1];
@@ -67,7 +67,7 @@ void color_convert(const color::basic_color<fully_custom_colorspace, color::RGB_
 {
     printf("Custom data v1 v2 %f %f\n", full.value, full.value2);
 
-    auto transformed = temporary::multiply(full.impl_linear_to_XYZ, (temporary::vector_1x3){in.r, in.g, in.b});
+    auto transformed = temporary::multiply(full.impl_linear_to_XYZ, temporary::vector_1x3{in.r, in.g, in.b});
 
     out.X = transformed.a[0];
     out.Y = transformed.a[1];
