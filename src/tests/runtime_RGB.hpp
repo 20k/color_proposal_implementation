@@ -29,13 +29,9 @@ void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, 
 {
     auto vec = temporary::multiply(data.impl_XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
-    color::concrete_value_model<color::normalised_float_value_model> c1{vec.a[0]};
-    color::concrete_value_model<color::normalised_float_value_model> c2{vec.a[1]};
-    color::concrete_value_model<color::normalised_float_value_model> c3{vec.a[2]};
-
-    out.r = color::transfer_function::default_parameterisation::linear_to_gamma(c1, color::sRGB_parameters(), color::normalised_float_value_model()).v;
-    out.g = color::transfer_function::default_parameterisation::linear_to_gamma(c2, color::sRGB_parameters(), color::normalised_float_value_model()).v;
-    out.b = color::transfer_function::default_parameterisation::linear_to_gamma(c3, color::sRGB_parameters(), color::normalised_float_value_model()).v;
+    out.r = color::RGB_float_model::R_gamma::default_parameterisation::linear_to_gamma(vec.a[0], color::sRGB_parameters());
+    out.g = color::RGB_float_model::G_gamma::default_parameterisation::linear_to_gamma(vec.a[1], color::sRGB_parameters());
+    out.b = color::RGB_float_model::B_gamma::default_parameterisation::linear_to_gamma(vec.a[2], color::sRGB_parameters());
 
     color::alpha_convert(in, out);
 }
@@ -44,13 +40,9 @@ template<typename A1, typename A2>
 constexpr inline
 void color_convert(const color::basic_color<runtime_RGB_space_tag, color::RGB_float_model, A1>& in, color::basic_color<color::XYZ_space, color::XYZ_model, A2>& out, const runtime_RGB_data& data)
 {
-    color::concrete_value_model<color::normalised_float_value_model> rv{in.r};
-    color::concrete_value_model<color::normalised_float_value_model> gv{in.g};
-    color::concrete_value_model<color::normalised_float_value_model> bv{in.b};
-
-    auto lin_r = color::transfer_function::default_parameterisation::gamma_to_linear(rv, color::sRGB_parameters());
-    auto lin_g = color::transfer_function::default_parameterisation::gamma_to_linear(gv, color::sRGB_parameters());
-    auto lin_b = color::transfer_function::default_parameterisation::gamma_to_linear(bv, color::sRGB_parameters());
+    auto lin_r = color::RGB_float_model::R_gamma::default_parameterisation::gamma_to_linear(in.r, color::sRGB_parameters());
+    auto lin_g = color::RGB_float_model::G_gamma::default_parameterisation::gamma_to_linear(in.g, color::sRGB_parameters());
+    auto lin_b = color::RGB_float_model::B_gamma::default_parameterisation::gamma_to_linear(in.b, color::sRGB_parameters());
 
     auto vec = temporary::multiply(data.impl_linear_to_XYZ, temporary::vector_1x3{lin_r.v, lin_g.v, lin_b.v});
 

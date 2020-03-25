@@ -329,30 +329,30 @@ namespace color
         {
             template<typename U>
             static inline constexpr
-            concrete_value_model<linear> gamma_to_linear(concrete_value_model<gamma> real_component, const U& in)
+            typename linear::type gamma_to_linear(typename gamma::type real_component, const U& in)
             {
-                float component = 0;
-                model_convert_member<gamma, linear>(real_component.v, component);
+                typename gamma::type component = typename gamma::type();
+                model_convert_member<gamma, linear>(real_component, component);
 
                 if(component <= in.transfer_bdelta)
-                    return {component / in.transfer_delta};
+                    return component / in.transfer_delta;
                 else
-                    return {std::pow((component + in.transfer_alpha - 1) / in.transfer_alpha, in.transfer_gamma)};
+                    return std::pow((component + in.transfer_alpha - 1) / in.transfer_alpha, in.transfer_gamma);
             }
 
             template<typename U>
             static inline constexpr
-            concrete_value_model<gamma> linear_to_gamma(concrete_value_model<linear> component, const U& in)
+            typename gamma::type linear_to_gamma(typename linear::type component, const U& in)
             {
-                typename linear::type my_val = 0;
+                typename linear::type my_val = typename linear::type();
 
-                if(component.v <= in.transfer_beta)
-                    my_val = component.v * in.transfer_delta;
+                if(component <= in.transfer_beta)
+                    my_val = component * in.transfer_delta;
                 else
-                    my_val = in.transfer_alpha * std::pow(component.v, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
+                    my_val = in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
 
-                concrete_value_model<gamma> ret = concrete_value_model<gamma>();
-                model_convert_member<linear, gamma>(my_val, ret.v);
+                typename gamma::type ret = typename gamma::type();
+                model_convert_member<linear, gamma>(my_val, ret);
                 return ret;
             }
         };
@@ -361,19 +361,19 @@ namespace color
         {
             template<typename U>
             static inline constexpr
-            concrete_value_model<linear> gamma_to_linear(concrete_value_model<gamma> real_component, const U& in)
+            typename linear::type gamma_to_linear(typename gamma::type real_component, const U& in)
             {
-                float component = 0;
-                model_convert_member<gamma, linear>(real_component.v, component);
-                return {component};
+                typename linear::type component = typename linear::type();
+                model_convert_member<gamma, linear>(real_component, component);
+                return component;
             }
 
             template<typename U>
             static inline constexpr
-            concrete_value_model<gamma> linear_to_gamma(concrete_value_model<linear> real_component, const U& in)
+            typename gamma::type linear_to_gamma(typename linear::type real_component, const U& in)
             {
-                concrete_value_model<gamma> component = concrete_value_model<gamma>();
-                model_convert_member<linear, gamma>(real_component.v, component.v);
+                typename gamma::type component = typename gamma::type();
+                model_convert_member<linear, gamma>(real_component, component);
                 return component;
             }
         };
@@ -465,6 +465,10 @@ namespace color
         using R_value = V1;
         using G_value = V2;
         using B_value = V3;
+
+        using R_gamma = gamma_space<V1>;
+        using G_gamma = gamma_space<V2>;
+        using B_gamma = gamma_space<V3>;
 
         constexpr RGB_model(typename V1::type _r, typename V2::type _g, typename V3::type _b) : r(_r), g(_g), b(_b){}
         constexpr RGB_model(){}
