@@ -25,15 +25,19 @@ struct runtime_RGB_color : color::basic_color<runtime_RGB_space_tag, color::RGB_
 
 template<typename A1, typename A2>
 constexpr inline
-void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, A1>& in, color::basic_color<runtime_RGB_space_tag, color::RGB_float_model, A2>& out)
+void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, A1>& in, color::basic_color<runtime_RGB_space_tag, color::RGB_float_model, A2>& out, const runtime_RGB_data& data)
 {
-    /*auto transformed = temporary::multiply(slow_sRGB_space::impl_XYZ_to_linear, (temporary::vector_1x3){in.X, in.Y, in.Z});
+    auto vec = temporary::multiply(data.impl_XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
-    out.r = transformed.a[0];
-    out.g = transformed.a[1];
-    out.b = transformed.a[2];
+    color::concrete_value_model<color::normalised_float_value_model> c1{vec.a[0]};
+    color::concrete_value_model<color::normalised_float_value_model> c2{vec.a[1]};
+    color::concrete_value_model<color::normalised_float_value_model> c3{vec.a[2]};
 
-    color::alpha_convert(in, out);*/
+    out.r = color::transfer_function::default_parameterisation::linear_to_gamma(c1, color::sRGB_parameters(), color::normalised_float_value_model()).v;
+    out.g = color::transfer_function::default_parameterisation::linear_to_gamma(c2, color::sRGB_parameters(), color::normalised_float_value_model()).v;
+    out.b = color::transfer_function::default_parameterisation::linear_to_gamma(c3, color::sRGB_parameters(), color::normalised_float_value_model()).v;
+
+    color::alpha_convert(in, out);
 }
 
 template<typename A1, typename A2>

@@ -322,6 +322,63 @@ namespace color
         };
     }
 
+    template<typename gamma, typename linear = normalised_float_value_model>
+    struct gamma_space
+    {
+        struct default_parameterisation
+        {
+            template<typename U>
+            static inline constexpr
+            concrete_value_model<linear> gamma_to_linear(concrete_value_model<gamma> real_component, const U& in)
+            {
+                float component = 0;
+                model_convert_member<gamma, linear>(real_component.v, component);
+
+                if(component <= in.transfer_bdelta)
+                    return {component / in.transfer_delta};
+                else
+                    return {std::pow((component + in.transfer_alpha - 1) / in.transfer_alpha, in.transfer_gamma)};
+            }
+
+            template<typename U>
+            static inline constexpr
+            concrete_value_model<gamma> linear_to_gamma(concrete_value_model<linear> component, const U& in)
+            {
+                typename linear::type my_val = 0;
+
+                if(component.v <= in.transfer_beta)
+                    my_val = component.v * in.transfer_delta;
+                else
+                    my_val = in.transfer_alpha * std::pow(component.v, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
+
+                concrete_value_model<gamma> ret = concrete_value_model<gamma>();
+                model_convert_member<linear, gamma>(my_val, ret.v);
+                return ret;
+            }
+        };
+
+        struct none
+        {
+            template<typename U>
+            static inline constexpr
+            concrete_value_model<linear> gamma_to_linear(concrete_value_model<gamma> real_component, const U& in)
+            {
+                float component = 0;
+                model_convert_member<gamma, linear>(real_component.v, component);
+                return {component};
+            }
+
+            template<typename U>
+            static inline constexpr
+            concrete_value_model<gamma> linear_to_gamma(concrete_value_model<linear> real_component, const U& in)
+            {
+                concrete_value_model<gamma> component = concrete_value_model<gamma>();
+                model_convert_member<linear, gamma>(real_component.v, component.v);
+                return component;
+            }
+        };
+    };
+
     struct sRGB_parameters
     {
         static constexpr chromaticity R{0.64, 0.33};
@@ -620,9 +677,7 @@ namespace color
     inline
     constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, basic_color<generic_RGB_space<space, gamma>, model, alpha_2>& out)
     {
-        using type = space;
-
-        auto vec = temporary::multiply(type::XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
+        auto vec = temporary::multiply(space::XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
         concrete_value_model<normalised_float_value_model> c1{vec.a[0]};
         concrete_value_model<normalised_float_value_model> c2{vec.a[1]};
