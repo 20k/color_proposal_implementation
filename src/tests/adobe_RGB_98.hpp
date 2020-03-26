@@ -21,7 +21,8 @@ struct adobe_RGB_98_transfer_parameters
     static constexpr float transfer_delta = 1;
     static constexpr float transfer_bdelta = 0;
 
-    using gamma = color::transfer_function::default_parameterisation;
+    template<typename T, typename U>
+    using gamma = typename color::gamma_space<T, U>::default_parameterisation;
 };
 
 using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters, adobe_RGB_98_transfer_parameters>;

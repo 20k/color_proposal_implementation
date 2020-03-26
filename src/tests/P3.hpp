@@ -21,7 +21,8 @@ struct P3_transfer_parameters
     static constexpr float transfer_delta = 12.92;
     static constexpr float transfer_bdelta = 0.04045;
 
-    using gamma = color::transfer_function::default_parameterisation;
+    template<typename T, typename U>
+    using gamma = typename color::gamma_space<T, U>::default_parameterisation;
 };
 
 using P3_space = color::generic_RGB_space<P3_parameters, P3_transfer_parameters>;

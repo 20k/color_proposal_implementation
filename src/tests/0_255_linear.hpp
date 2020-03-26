@@ -13,10 +13,7 @@ struct weirdo_float_value
     static inline constexpr float max = 255;
 };
 
-struct weirdo_float_model : color::RGB_model<weirdo_float_value, weirdo_float_value, weirdo_float_value>
-{
-
-};
+using weirdo_float_model = color::RGB_model<weirdo_float_value, weirdo_float_value, weirdo_float_value>;
 
 struct weirdo_linear_space : color::basic_color<color::linear_sRGB_space, weirdo_float_model, color::no_alpha>
 {

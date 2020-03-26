@@ -325,14 +325,17 @@ namespace color
     template<typename gamma, typename linear = normalised_float_value_model>
     struct gamma_space
     {
+        using gamma_t = gamma;
+        using linear_t = linear;
+
         struct default_parameterisation
         {
             template<typename U>
             static inline constexpr
             typename linear::type gamma_to_linear(typename gamma::type real_component, const U& in)
             {
-                typename gamma::type component = typename gamma::type();
-                model_convert_member<gamma, linear>(real_component, component);
+                float component = 0;
+                model_convert_member<gamma, normalised_float_value_model>(real_component, component);
 
                 if(component <= in.transfer_bdelta)
                     return component / in.transfer_delta;
@@ -344,7 +347,7 @@ namespace color
             static inline constexpr
             typename gamma::type linear_to_gamma(typename linear::type component, const U& in)
             {
-                typename linear::type my_val = typename linear::type();
+                float my_val = 0;
 
                 if(component <= in.transfer_beta)
                     my_val = component * in.transfer_delta;
@@ -352,7 +355,7 @@ namespace color
                     my_val = in.transfer_alpha * std::pow(component, 1/in.transfer_gamma) - (in.transfer_alpha - 1);
 
                 typename gamma::type ret = typename gamma::type();
-                model_convert_member<linear, gamma>(my_val, ret);
+                model_convert_member<normalised_float_value_model, gamma>(my_val, ret);
                 return ret;
             }
         };
@@ -399,12 +402,14 @@ namespace color
         static constexpr float transfer_delta = 12.92;
         static constexpr float transfer_bdelta = 0.04045;
 
-        using gamma = transfer_function::default_parameterisation;
+        template<typename T, typename U>
+        using gamma = typename gamma_space<T, U>::default_parameterisation;
     };
 
     struct empty_transfer_parameters
     {
-        using gamma = transfer_function::none;
+        template<typename T, typename U>
+        using gamma = typename gamma_space<T, U>::none;
     };
 
     template<typename T, typename U>
@@ -603,6 +608,18 @@ namespace color
         model_convert_member<W1, W2>(in.a, out.a);
     }*/
 
+    /*template<template<typename, typename> typename gamma, typename T, typename U>
+    struct get_gamma_model_impl
+    {
+        using type = gamma<T, U>;
+    };
+
+    template<typename gamma, typename T, typename U>
+    struct get_gamma_space
+    {
+        using type = typename get_gamma_model_impl<typename gamma::gamma, T, U>::type;
+    };*/
+
     ///direct conversion between two arbitrary RGB space
     template<typename space_1, typename model_1, typename gamma_1, typename alpha_1, typename space_2, typename model_2, typename gamma_2, typename alpha_2>
     inline
@@ -615,7 +632,7 @@ namespace color
         }
         else
         {
-            concrete_value_model<typename model_1::R_value> rv{in.r};
+            /*concrete_value_model<typename model_1::R_value> rv{in.r};
             concrete_value_model<typename model_1::G_value> gv{in.g};
             concrete_value_model<typename model_1::B_value> bv{in.b};
 
@@ -646,6 +663,52 @@ namespace color
                 out.r = gamma_2::gamma::linear_to_gamma(o_r, gamma_2(), typename model_2::R_value()).v;
                 out.g = gamma_2::gamma::linear_to_gamma(o_g, gamma_2(), typename model_2::G_value()).v;
                 out.b = gamma_2::gamma::linear_to_gamma(o_b, gamma_2(), typename model_2::B_value()).v;
+            }*/
+
+            //using R_gspace = typename gamma_1::gamma<typename model_1::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>;
+            //using R_gspace = typename gamma_1::gamma<typename model_1::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>;
+
+            //using RGam = typename get_gamma_space<gamma_1, typename model_1::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>::type;
+
+            //typename model_1::R_gamma::linear_t::type lin_r = typename RGam::type::default_parameterisation::gamma_to_linear(in.r, gamma_1());
+
+            typename model_1::R_gamma::linear_t::type lin_r = gamma_1::template gamma<typename model_1::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>::gamma_to_linear(in.r, gamma_1());
+            typename model_1::G_gamma::linear_t::type lin_g = gamma_1::template gamma<typename model_1::G_gamma::gamma_t, typename model_1::G_gamma::linear_t>::gamma_to_linear(in.g, gamma_1());
+            typename model_1::B_gamma::linear_t::type lin_b = gamma_1::template gamma<typename model_1::B_gamma::gamma_t, typename model_1::B_gamma::linear_t>::gamma_to_linear(in.b, gamma_1());
+
+            /*typename model_1::R_gamma::linear_t::type lin_r = model_1::R_gamma::default_parameterisation::gamma_to_linear(in.r, gamma_1());
+            typename model_1::G_gamma::linear_t::type lin_g = model_1::G_gamma::default_parameterisation::gamma_to_linear(in.g, gamma_1());
+            typename model_1::B_gamma::linear_t::type lin_b = model_1::B_gamma::default_parameterisation::gamma_to_linear(in.b, gamma_1());*/
+
+            if constexpr(std::is_same_v<space_1, space_2>)
+            {
+                /*out.r = gamma_space<typename model_2::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>::linear_to_gamma(lin_r, gamma_2());
+                out.g = gamma_space<typename model_2::G_gamma::gamma_t, typename model_1::G_gamma::linear_t>::linear_to_gamma(lin_g, gamma_2());
+                out.b = gamma_space<typename model_2::B_gamma::gamma_t, typename model_1::B_gamma::linear_t>::linear_to_gamma(lin_b, gamma_2());*/
+
+                out.r = gamma_2::template gamma<typename model_2::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>::linear_to_gamma(lin_r, gamma_2());
+                out.g = gamma_2::template gamma<typename model_2::G_gamma::gamma_t, typename model_1::G_gamma::linear_t>::linear_to_gamma(lin_g, gamma_2());
+                out.b = gamma_2::template gamma<typename model_2::B_gamma::gamma_t, typename model_1::B_gamma::linear_t>::linear_to_gamma(lin_b, gamma_2());
+            }
+            else
+            {
+                auto combo_convert = temporary::multiply(space_2::XYZ_to_linear, space_1::linear_to_XYZ);
+
+                ///Todo: once real parameterised matrices are being used here (linear algebra proposal), and gamma_to_linear returns a value_type, parameterise the matrix
+                ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
+                auto vec = temporary::multiply(combo_convert, temporary::vector_1x3{lin_r, lin_g, lin_b});
+
+                /*out.r = gamma_2::gamma::linear_to_gamma(o_r, gamma_2(), typename model_2::R_value()).v;
+                out.g = gamma_2::gamma::linear_to_gamma(o_g, gamma_2(), typename model_2::G_value()).v;
+                out.b = gamma_2::gamma::linear_to_gamma(o_b, gamma_2(), typename model_2::B_value()).v;*/
+
+                /*out.r = gamma_space<typename model_2::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>::linear_to_gamma(vec.a[0], gamma_2());
+                out.g = gamma_space<typename model_2::G_gamma::gamma_t, typename model_1::G_gamma::linear_t>::linear_to_gamma(vec.a[1], gamma_2());
+                out.b = gamma_space<typename model_2::B_gamma::gamma_t, typename model_1::B_gamma::linear_t>::linear_to_gamma(vec.a[2], gamma_2());*/
+
+                out.r = gamma_2::template gamma<typename model_2::R_gamma::gamma_t, typename model_1::R_gamma::linear_t>::linear_to_gamma(vec.a[0], gamma_2());
+                out.g = gamma_2::template gamma<typename model_2::G_gamma::gamma_t, typename model_1::G_gamma::linear_t>::linear_to_gamma(vec.a[1], gamma_2());
+                out.b = gamma_2::template gamma<typename model_2::B_gamma::gamma_t, typename model_1::B_gamma::linear_t>::linear_to_gamma(vec.a[2], gamma_2());
             }
         }
 
@@ -659,19 +722,23 @@ namespace color
     {
         using type = space;
 
-        concrete_value_model<typename model::R_value> rv{in.r};
+        /*concrete_value_model<typename model::R_value> rv{in.r};
         concrete_value_model<typename model::G_value> gv{in.g};
         concrete_value_model<typename model::B_value> bv{in.b};
 
         auto lin_r = gamma::gamma::gamma_to_linear(rv, gamma());
         auto lin_g = gamma::gamma::gamma_to_linear(gv, gamma());
-        auto lin_b = gamma::gamma::gamma_to_linear(bv, gamma());
+        auto lin_b = gamma::gamma::gamma_to_linear(bv, gamma());*/
 
-        auto vec = temporary::multiply(type::linear_to_XYZ, temporary::vector_1x3{lin_r.v, lin_g.v, lin_b.v});
+        auto lin_r = gamma::template gamma<typename model::R_gamma::gamma_t, typename model::R_gamma::linear_t>::gamma_to_linear(in.r, gamma());
+        auto lin_g = gamma::template gamma<typename model::G_gamma::gamma_t, typename model::G_gamma::linear_t>::gamma_to_linear(in.g, gamma());
+        auto lin_b = gamma::template gamma<typename model::B_gamma::gamma_t, typename model::B_gamma::linear_t>::gamma_to_linear(in.b, gamma());
 
-        model_convert_member<typename decltype(lin_r)::type, normalised_float_value_model>(vec.a[0], out.X);
-        model_convert_member<typename decltype(lin_g)::type, normalised_float_value_model>(vec.a[1], out.Y);
-        model_convert_member<typename decltype(lin_b)::type, normalised_float_value_model>(vec.a[2], out.Z);
+        auto vec = temporary::multiply(type::linear_to_XYZ, temporary::vector_1x3{lin_r, lin_g, lin_b});
+
+        model_convert_member<typename model::R_gamma::linear_t, normalised_float_value_model>(vec.a[0], out.X);
+        model_convert_member<typename model::G_gamma::linear_t, normalised_float_value_model>(vec.a[1], out.Y);
+        model_convert_member<typename model::B_gamma::linear_t, normalised_float_value_model>(vec.a[2], out.Z);
 
         alpha_convert(in, out);
     }
@@ -683,13 +750,17 @@ namespace color
     {
         auto vec = temporary::multiply(space::XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
-        concrete_value_model<normalised_float_value_model> c1{vec.a[0]};
+        /*concrete_value_model<normalised_float_value_model> c1{vec.a[0]};
         concrete_value_model<normalised_float_value_model> c2{vec.a[1]};
         concrete_value_model<normalised_float_value_model> c3{vec.a[2]};
 
         out.r = gamma::gamma::linear_to_gamma(c1, gamma(), typename model::R_value()).v;
         out.g = gamma::gamma::linear_to_gamma(c2, gamma(), typename model::G_value()).v;
-        out.b = gamma::gamma::linear_to_gamma(c3, gamma(), typename model::B_value()).v;
+        out.b = gamma::gamma::linear_to_gamma(c3, gamma(), typename model::B_value()).v;*/
+
+        out.r = gamma::template gamma<typename model::R_gamma::gamma_t, typename model::R_gamma::linear_t>::linear_to_gamma(vec.a[0], gamma());
+        out.g = gamma::template gamma<typename model::G_gamma::gamma_t, typename model::G_gamma::linear_t>::linear_to_gamma(vec.a[1], gamma());
+        out.b = gamma::template gamma<typename model::B_gamma::gamma_t, typename model::B_gamma::linear_t>::linear_to_gamma(vec.a[2], gamma());
 
         alpha_convert(in, out);
     }

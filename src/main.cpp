@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <algorithm>
 #include <tuple>
+
+#ifndef NO_TESTS
 #include "tests/adobe_RGB_98.hpp"
 #include "tests/common.hpp"
 #include "tests/P3.hpp"
@@ -180,24 +182,23 @@ void tests()
         printf("%i\n", x);
     }
 }
+#endif // NO_TESTS
 
 int main()
 {
-    #if 0
     color::sRGB_uint8 val(255, 127, 80);
-    color::sRGB_float fval;
-    color::XYZ_float xyz_f(0, 0, 0);
-    custom_color custom;
+    color::convert<color::linear_sRGB_float>(val);
 
-    color::convert(val, fval);
-
+    #if 0
     assert(color::has_optimised_conversion(fval, xyz_f));
     assert(color::has_optimised_conversion(custom, fval));
 
     std::cout << "fval " << fval.r << " " << fval.g << " " << fval.b << std::endl;
     #endif // 0
 
+    #ifndef NO_TESTS
     tests();
+    #endif // NO_TESTS
 
     //color::basic_color<dummy> hello;
 
