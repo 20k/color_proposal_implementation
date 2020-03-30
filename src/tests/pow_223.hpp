@@ -10,7 +10,8 @@ struct sRGB_approx_transfer_parameters
     static constexpr float transfer_delta = 1;
     static constexpr float transfer_bdelta = 0;
 
-    using gamma = color::transfer_function::default_parameterisation;
+    template<typename T, typename U>
+    using transfer_function = typename color::transfer_function<T, U>::gamma;
 };
 
 using approx_sRGB_space = color::generic_RGB_space<color::sRGB_parameters, sRGB_approx_transfer_parameters>;
