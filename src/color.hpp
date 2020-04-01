@@ -258,6 +258,8 @@ namespace color
         using nonlinear_t = nonlinear;
         using linear_t = linear;
 
+        ///TODO: Instead of a generic gamma function, use the concrete sRGB functions, which internally use a generic gamma function
+        ///Solves the table lookup problem
         struct gamma
         {
             template<typename U>
