@@ -21,11 +21,11 @@ struct adobe_RGB_98_transfer_parameters
     static constexpr float transfer_delta = 1;
     static constexpr float transfer_bdelta = 0;
 
-    template<typename T, typename U>
-    using transfer_function = typename color::transfer_function<T, U>::gamma;
+    /*template<typename T, typename U>
+    using transfer_function = typename color::transfer_function<T, U>::gamma;*/
 };
 
-using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters, adobe_RGB_98_transfer_parameters>;
+using adobe_space = color::generic_RGB_space<adobe_RGB_98_parameters, color::transfer_function::gamma_static<adobe_RGB_98_transfer_parameters>>;
 
 struct adobe_float : color::basic_color<adobe_space, color::RGB_float_model, color::no_alpha>
 {

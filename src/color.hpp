@@ -252,6 +252,7 @@ namespace color
         static inline constexpr float max = FLT_MAX;
     };
 
+    #if 0
     template<typename nonlinear, typename linear = normalised_float_value_model>
     struct transfer_function
     {
@@ -292,6 +293,8 @@ namespace color
             }
         };
 
+
+
         struct none
         {
             template<typename U>
@@ -313,6 +316,99 @@ namespace color
             }
         };
     };
+    #endif // 0
+
+    struct sRGB_gamma_parameters
+    {
+        static constexpr float transfer_alpha = 1.055;
+        static constexpr float transfer_beta = 0.0031308;
+        static constexpr float transfer_gamma = 12/5.f;
+        static constexpr float transfer_delta = 12.92;
+        static constexpr float transfer_bdelta = 0.04045;
+    };
+
+    namespace transfer_function
+    {
+        template<typename params>
+        struct gamma_static
+        {
+            template<typename nonlinear, typename linear = normalised_float_value_model>
+            static inline constexpr
+            typename linear::type to_linear(typename nonlinear::type in_component)
+            {
+                float component = 0;
+                model_convert_member<nonlinear, normalised_float_value_model>(in_component, component);
+
+                if(component <= params::transfer_bdelta)
+                    return component / params::transfer_delta;
+                else
+                    return std::pow((component + params::transfer_alpha - 1) / params::transfer_alpha, params::transfer_gamma);
+            }
+
+            template<typename nonlinear, typename linear = normalised_float_value_model>
+            static inline constexpr
+            typename nonlinear::type from_linear(typename linear::type in_component)
+            {
+                float my_val = 0;
+
+                if(in_component <= params::transfer_beta)
+                    my_val = in_component * params::transfer_delta;
+                else
+                    my_val = params::transfer_alpha * std::pow(in_component, 1/params::transfer_gamma) - (params::transfer_alpha - 1);
+
+                typename nonlinear::type ret = typename nonlinear::type();
+                model_convert_member<normalised_float_value_model, nonlinear>(my_val, ret);
+                return ret;
+            }
+        };
+
+        struct none
+        {
+            template<typename nonlinear, typename linear = normalised_float_value_model>
+            static inline constexpr
+            typename linear::type to_linear(typename nonlinear::type in_component)
+            {
+                typename linear::type component = typename linear::type();
+                model_convert_member<nonlinear, linear>(in_component, component);
+                return component;
+            }
+
+            template<typename nonlinear, typename linear = normalised_float_value_model>
+            static inline constexpr
+            typename nonlinear::type from_linear(typename linear::type in_component)
+            {
+                typename nonlinear::type component = typename nonlinear::type();
+                model_convert_member<linear, nonlinear>(in_component, component);
+                return component;
+            }
+        };
+
+        struct sRGB_gamma
+        {
+            template<typename nonlinear, typename linear = normalised_float_value_model>
+            static inline constexpr
+            typename linear::type to_linear(typename nonlinear::type in_component)
+            {
+                return gamma_static<sRGB_gamma_parameters>::to_linear<nonlinear, linear>(in_component);
+            }
+
+            template<typename nonlinear, typename linear = normalised_float_value_model>
+            static inline constexpr
+            typename nonlinear::type from_linear(typename linear::type in_component)
+            {
+                return gamma_static<sRGB_gamma_parameters>::from_linear<nonlinear, linear>(in_component);
+            }
+        };
+    }
+
+    template<typename TF, typename nonlinear>
+    struct linear_type
+    {
+        using value = normalised_float_value_model;
+    };
+
+    template<typename TF, typename nonlinear>
+    using linear_type_v = typename linear_type<TF, nonlinear>::value;
 
     struct sRGB_parameters
     {
@@ -326,7 +422,7 @@ namespace color
         static constexpr temporary::matrix_3x3 XYZ_to_linear = linear_to_XYZ.invert();
     };
 
-    struct sRGB_transfer_parameters
+    /*struct sRGB_transfer_parameters
     {
         static constexpr float transfer_alpha = 1.055;
         static constexpr float transfer_beta = 0.0031308;
@@ -342,18 +438,19 @@ namespace color
     {
         template<typename T, typename U>
         using transfer_function = typename transfer_function<T, U>::none;
-    };
+    };*/
 
     template<typename T, typename U>
     struct generic_RGB_space : basic_color_space
     {
         using RGB_parameters = T;
+
         using transfer_function_parameters = U;
     };
 
-    using sRGB_space = generic_RGB_space<sRGB_parameters, sRGB_transfer_parameters>;
+    using sRGB_space = generic_RGB_space<sRGB_parameters, transfer_function::sRGB_gamma>;
     ///'linear color' is really linear sRGB specifically
-    using linear_sRGB_space = generic_RGB_space<sRGB_parameters, empty_transfer_parameters>;
+    using linear_sRGB_space = generic_RGB_space<sRGB_parameters, transfer_function::none>;
 
     struct XYZ_space : basic_color_space
     {
@@ -402,10 +499,6 @@ namespace color
         using R_value = V1;
         using G_value = V2;
         using B_value = V3;
-
-        using R_transfer = transfer_function<V1>;
-        using G_transfer = transfer_function<V2>;
-        using B_transfer = transfer_function<V3>;
 
         constexpr RGB_model(typename V1::type _r, typename V2::type _g, typename V3::type _b) : r(_r), g(_g), b(_b){}
         constexpr RGB_model(){}
@@ -564,15 +657,43 @@ namespace color
         }
         else
         {
-            typename model_1::R_transfer::linear_t::type lin_r = gamma_1::template transfer_function<typename model_1::R_transfer::nonlinear_t, typename model_1::R_transfer::linear_t>::to_linear(in.r, gamma_1());
+            /*typename model_1::R_transfer::linear_t::type lin_r = gamma_1::template transfer_function<typename model_1::R_transfer::nonlinear_t, typename model_1::R_transfer::linear_t>::to_linear(in.r, gamma_1());
             typename model_1::G_transfer::linear_t::type lin_g = gamma_1::template transfer_function<typename model_1::G_transfer::nonlinear_t, typename model_1::G_transfer::linear_t>::to_linear(in.g, gamma_1());
-            typename model_1::B_transfer::linear_t::type lin_b = gamma_1::template transfer_function<typename model_1::B_transfer::nonlinear_t, typename model_1::B_transfer::linear_t>::to_linear(in.b, gamma_1());
+            typename model_1::B_transfer::linear_t::type lin_b = gamma_1::template transfer_function<typename model_1::B_transfer::nonlinear_t, typename model_1::B_transfer::linear_t>::to_linear(in.b, gamma_1());*/
+
+            using gamma_1_R_class = gamma_1;
+            using gamma_1_G_class = gamma_1;
+            using gamma_1_B_class = gamma_1;
+
+            using linear_R_t = linear_type_v<gamma_1, typename model_1::R_value>;
+            using linear_G_t = linear_type_v<gamma_1, typename model_1::G_value>;
+            using linear_B_t = linear_type_v<gamma_1, typename model_1::B_value>;
+
+            using nonlinear_1_R_t = typename model_1::R_value;
+            using nonlinear_1_G_t = typename model_1::G_value;
+            using nonlinear_1_B_t = typename model_1::B_value;
+
+            using gamma_2_R_class = gamma_2;
+            using gamma_2_G_class = gamma_2;
+            using gamma_2_B_class = gamma_2;
+
+            using nonlinear_2_R_t = typename model_2::R_value;
+            using nonlinear_2_G_t = typename model_2::G_value;
+            using nonlinear_2_B_t = typename model_2::B_value;
+
+            typename linear_R_t::type lin_r = gamma_1_R_class::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
+            typename linear_G_t::type lin_g = gamma_1_G_class::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
+            typename linear_B_t::type lin_b = gamma_1_B_class::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);
 
             if constexpr(std::is_same_v<space_1, space_2>)
             {
-                out.r = gamma_2::template transfer_function<typename model_2::R_transfer::nonlinear_t, typename model_1::R_transfer::linear_t>::from_linear(lin_r, gamma_2());
+                out.r = gamma_2_R_class::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r);
+                out.g = gamma_2_G_class::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g);
+                out.b = gamma_2_B_class::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b);
+
+                /*out.r = gamma_2::template transfer_function<typename model_2::R_transfer::nonlinear_t, typename model_1::R_transfer::linear_t>::from_linear(lin_r, gamma_2());
                 out.g = gamma_2::template transfer_function<typename model_2::G_transfer::nonlinear_t, typename model_1::G_transfer::linear_t>::from_linear(lin_g, gamma_2());
-                out.b = gamma_2::template transfer_function<typename model_2::B_transfer::nonlinear_t, typename model_1::B_transfer::linear_t>::from_linear(lin_b, gamma_2());
+                out.b = gamma_2::template transfer_function<typename model_2::B_transfer::nonlinear_t, typename model_1::B_transfer::linear_t>::from_linear(lin_b, gamma_2());*/
             }
             else
             {
@@ -582,9 +703,9 @@ namespace color
                 ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
                 auto vec = temporary::multiply(combo_convert, temporary::vector_1x3{lin_r, lin_g, lin_b});
 
-                out.r = gamma_2::template transfer_function<typename model_2::R_transfer::nonlinear_t, typename model_1::R_transfer::linear_t>::from_linear(vec.a[0], gamma_2());
-                out.g = gamma_2::template transfer_function<typename model_2::G_transfer::nonlinear_t, typename model_1::G_transfer::linear_t>::from_linear(vec.a[1], gamma_2());
-                out.b = gamma_2::template transfer_function<typename model_2::B_transfer::nonlinear_t, typename model_1::B_transfer::linear_t>::from_linear(vec.a[2], gamma_2());
+                out.r = gamma_2_R_class::template from_linear<nonlinear_2_R_t, linear_R_t>(vec.a[0]);
+                out.g = gamma_2_G_class::template from_linear<nonlinear_2_G_t, linear_G_t>(vec.a[1]);
+                out.b = gamma_2_B_class::template from_linear<nonlinear_2_B_t, linear_B_t>(vec.a[2]);
             }
         }
 
@@ -598,15 +719,27 @@ namespace color
     {
         using type = space;
 
-        auto lin_r = trans::template transfer_function<typename model::R_transfer::nonlinear_t, typename model::R_transfer::linear_t>::to_linear(in.r, trans());
-        auto lin_g = trans::template transfer_function<typename model::G_transfer::nonlinear_t, typename model::G_transfer::linear_t>::to_linear(in.g, trans());
-        auto lin_b = trans::template transfer_function<typename model::B_transfer::nonlinear_t, typename model::B_transfer::linear_t>::to_linear(in.b, trans());
+        using gamma_1_R_class = trans;
+        using gamma_1_G_class = trans;
+        using gamma_1_B_class = trans;
+
+        using nonlinear_1_R_t = typename model::R_value;
+        using nonlinear_1_G_t = typename model::G_value;
+        using nonlinear_1_B_t = typename model::B_value;
+
+        using linear_R_t = linear_type_v<trans, typename model::R_value>;
+        using linear_G_t = linear_type_v<trans, typename model::G_value>;
+        using linear_B_t = linear_type_v<trans, typename model::B_value>;
+
+        auto lin_r = gamma_1_R_class::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
+        auto lin_g = gamma_1_G_class::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
+        auto lin_b = gamma_1_B_class::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);
 
         auto vec = temporary::multiply(type::linear_to_XYZ, temporary::vector_1x3{lin_r, lin_g, lin_b});
 
-        model_convert_member<typename model::R_transfer::linear_t, normalised_float_value_model>(vec.a[0], out.X);
-        model_convert_member<typename model::G_transfer::linear_t, normalised_float_value_model>(vec.a[1], out.Y);
-        model_convert_member<typename model::B_transfer::linear_t, normalised_float_value_model>(vec.a[2], out.Z);
+        model_convert_member<linear_R_t, normalised_float_value_model>(vec.a[0], out.X);
+        model_convert_member<linear_G_t, normalised_float_value_model>(vec.a[1], out.Y);
+        model_convert_member<linear_B_t, normalised_float_value_model>(vec.a[2], out.Z);
 
         alpha_convert(in, out);
     }
@@ -618,9 +751,21 @@ namespace color
     {
         auto vec = temporary::multiply(space::XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
-        out.r = trans::template transfer_function<typename model::R_transfer::nonlinear_t, typename model::R_transfer::linear_t>::from_linear(vec.a[0], trans());
+        /*out.r = trans::template transfer_function<typename model::R_transfer::nonlinear_t, typename model::R_transfer::linear_t>::from_linear(vec.a[0], trans());
         out.g = trans::template transfer_function<typename model::G_transfer::nonlinear_t, typename model::G_transfer::linear_t>::from_linear(vec.a[1], trans());
-        out.b = trans::template transfer_function<typename model::B_transfer::nonlinear_t, typename model::B_transfer::linear_t>::from_linear(vec.a[2], trans());
+        out.b = trans::template transfer_function<typename model::B_transfer::nonlinear_t, typename model::B_transfer::linear_t>::from_linear(vec.a[2], trans());*/
+
+        using gamma_2_R_class = trans;
+        using gamma_2_G_class = trans;
+        using gamma_2_B_class = trans;
+
+        using nonlinear_1_R_t = typename model::R_value;
+        using nonlinear_1_G_t = typename model::G_value;
+        using nonlinear_1_B_t = typename model::B_value;
+
+        out.r = gamma_2_R_class::template from_linear<nonlinear_1_R_t, normalised_float_value_model>(vec.a[0]);
+        out.g = gamma_2_G_class::template from_linear<nonlinear_1_G_t, normalised_float_value_model>(vec.a[1]);
+        out.b = gamma_2_B_class::template from_linear<nonlinear_1_B_t, normalised_float_value_model>(vec.a[2]);
 
         alpha_convert(in, out);
     }
