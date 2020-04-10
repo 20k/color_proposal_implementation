@@ -173,8 +173,6 @@ void tests()
     }
 
     {
-        static_assert(std::tuple_size_v<color::RGB_model<color::uint8_value_model, color::uint8_value_model, color::uint8_value_model>> == 3);
-
         color::RGB_model<color::uint8_value_model, color::uint8_value_model, color::uint8_value_model> model{255, 255, 255};
 
         auto [x, y, z] = model;
