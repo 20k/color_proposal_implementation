@@ -187,6 +187,8 @@ int main()
     color::sRGB_uint8 val(255, 127, 80);
     color::convert<color::linear_sRGB_float>(val);
 
+    static_assert(color::has_optimised_conversion<color::sRGB_uint8, color::linear_sRGB_float>());
+
     #if 0
     assert(color::has_optimised_conversion(fval, xyz_f));
     assert(color::has_optimised_conversion(custom, fval));
