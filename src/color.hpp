@@ -773,6 +773,8 @@ namespace color
                                       tuple_arg_construct<tf_src_t>(args...),
                                       tuple_arg_construct<tf_dst_t>(args...));
 
+        static_assert(std::tuple_size_v<decltype(arg_tup)> == 6);
+
         (void)arg_tup;
 
         if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
