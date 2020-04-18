@@ -261,6 +261,50 @@ namespace color
         static constexpr float transfer_bdelta = 0.04045;
     };
 
+    template<typename T>
+    struct type_base_t
+    {
+        T&& t;
+
+        constexpr type_base_t(T&& in) : t(std::forward<T>(in)){}
+
+        constexpr bool has_value(){return true;}
+
+        T&& value(){return std::forward<T>(t);}
+    };
+
+    template<>
+    struct type_base_t<void>
+    {
+        constexpr type_base_t(){}
+
+        constexpr bool has_value(){return false;}
+    };
+
+    template<typename T>
+    struct arg_src_t : type_base_t<T>
+    {
+
+    };
+
+    template<typename T>
+    struct arg_dst_t : type_base_t<T>
+    {
+
+    };
+
+    template<typename T>
+    struct tf_src_t : type_base_t<T>
+    {
+
+    };
+
+    template<typename T>
+    struct tf_dst_t : type_base_t<T>
+    {
+
+    };
+
     namespace transfer_function
     {
         template<typename params>
@@ -667,6 +711,50 @@ namespace color
         return same_space && same_model && same_alpha;
     }
 
+    /*template<typename T, template <typename...> typename Template>
+    struct is_specialisation : std::false_type {};
+
+    template<template <typename...> typename Template, typename... Args>
+    struct is_specialisation<Template<Args...>, Template> : std::true_type {};*/
+
+    template<typename T, template <typename...> typename arg_template>
+    struct is_specialisation : std::false_type {};
+
+    template<template<typename...> typename arg_template, typename... Args>
+    struct is_specialisation<arg_template<Args...>, arg_template> : std::true_type {};
+
+    template<template<typename...> typename arg_template, typename T>
+    constexpr auto tuple_get_arg(T&& arg)
+    {
+        if constexpr(is_specialisation<T, arg_template>::value)
+        {
+            return std::forward_as_tuple(std::forward<T>(arg));
+        }
+        else
+        {
+            return std::tuple<>();
+        }
+    }
+
+    template<template<typename...> typename arg_template, typename Or, typename... T>
+    constexpr auto tuple_type_or(std::tuple<T...>&& arg)
+    {
+        if constexpr(sizeof...(T) == 0)
+        {
+            return std::tuple<arg_template<Or>>(arg_template<Or>());
+        }
+        else
+        {
+            return arg;
+        }
+    }
+
+    template<template<typename...> typename arg_template, typename... T>
+    constexpr auto tuple_arg_construct(T&&... args)
+    {
+        return tuple_type_or<arg_template, void>(std::tuple_cat(tuple_get_arg<arg_template>(args)...));
+    }
+
     template<typename T1, typename T2, typename... Args>
     inline
     constexpr void convert_impl(const T1& in, T2& out, Args&&... args)
@@ -676,6 +764,16 @@ namespace color
             out = in;
             return;
         }
+
+        std::tuple<const T1&, T2&> tup(in, out);
+
+        auto arg_tup = std::tuple_cat(tup,
+                                      tuple_arg_construct<arg_src_t>(args...),
+                                      tuple_arg_construct<arg_dst_t>(args...),
+                                      tuple_arg_construct<tf_src_t>(args...),
+                                      tuple_arg_construct<tf_dst_t>(args...));
+
+        (void)arg_tup;
 
         if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
         {
@@ -688,6 +786,8 @@ namespace color
             color_convert(intermediate, out); ///TODO: Args2...
         }
     }
+
+    ///May have to make templated functors within the existing struct namespace. Ergh
 
     template<typename destination, typename source, typename... T>
     inline
