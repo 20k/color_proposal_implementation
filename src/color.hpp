@@ -624,11 +624,11 @@ namespace color
     using XYZ = basic_color<XYZ_space, XYZ_model>;*/
 
     ///direct conversion between two arbitrary RGB space
-    template<typename space_1, typename model_1, typename gamma_1, typename alpha_1, typename space_2, typename model_2, typename gamma_2, typename alpha_2, typename gamma_args_1 = void, typename gamma_args_2 = void>
+    template<typename space_1, typename model_1, typename gamma_1, typename alpha_1, typename space_2, typename model_2, typename gamma_2, typename alpha_2, typename tf_args_1 = void, typename tf_args_2 = void>
     inline
     constexpr void color_convert(const basic_color<generic_RGB_space<space_1, gamma_1>, model_1, alpha_1>& in, basic_color<generic_RGB_space<space_2, gamma_2>, model_2, alpha_2>& out,
                                  arg_src_t<void> a1 = arg_src_t<void>(), arg_dst_t<void> a2 = arg_dst_t<void>(),
-                                 tf_src_t<gamma_args_1> gamma_data_1 = tf_src_t<gamma_args_1>(), tf_dst_t<gamma_args_2> gamma_data_2 = tf_dst_t<gamma_args_2>())
+                                 tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>(), tf_dst_t<tf_args_2> tf_data_2 = tf_dst_t<tf_args_2>())
     {
         ///different models and alpha
         if constexpr(std::is_same_v<space_1, space_2> && std::is_same_v<gamma_1, gamma_2>)
@@ -649,17 +649,28 @@ namespace color
             using nonlinear_2_G_t = typename model_2::G_value;
             using nonlinear_2_B_t = typename model_2::B_value;
 
-            typename linear_R_t::type lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
+            /*typename linear_R_t::type lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
             typename linear_G_t::type lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
-            typename linear_B_t::type lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);
+            typename linear_B_t::type lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);*/
 
-            if constexpr(std::is_same_v<space_1, space_2>)
+            typename linear_R_t::type lin_r = typename linear_R_t::type();
+            typename linear_G_t::type lin_g = typename linear_G_t::type();
+            typename linear_B_t::type lin_b = typename linear_B_t::type();
+
+            if constexpr(!std::is_same_v<void, tf_args_1>)
             {
-                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r);
-                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g);
-                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b);
+                lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r, tf_data_1.value());
+                lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g, tf_data_1.value());
+                lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b, tf_data_1.value());
             }
             else
+            {
+                lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
+                lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
+                lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);
+            }
+
+            if constexpr(!std::is_same_v<space_1, space_2>)
             {
                 auto combo_convert = temporary::multiply(space_2::XYZ_to_linear, space_1::linear_to_XYZ);
 
@@ -667,9 +678,23 @@ namespace color
                 ///based on that, for people who want to overload gamma_to_linear and linear_to_gamma
                 auto vec = temporary::multiply(combo_convert, temporary::vector_1x3{lin_r, lin_g, lin_b});
 
-                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(vec.a[0]);
-                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(vec.a[1]);
-                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(vec.a[2]);
+                lin_r = vec.a[0];
+                lin_g = vec.a[1];
+                lin_b = vec.a[2];
+            }
+
+
+            if constexpr(!std::is_same_v<void, tf_args_2>)
+            {
+                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r, tf_data_2.value());
+                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g, tf_data_2.value());
+                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b, tf_data_2.value());
+            }
+            else
+            {
+                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r);
+                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g);
+                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b);
             }
         }
 
