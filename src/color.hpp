@@ -649,10 +649,6 @@ namespace color
             using nonlinear_2_G_t = typename model_2::G_value;
             using nonlinear_2_B_t = typename model_2::B_value;
 
-            /*typename linear_R_t::type lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
-            typename linear_G_t::type lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
-            typename linear_B_t::type lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);*/
-
             typename linear_R_t::type lin_r = typename linear_R_t::type();
             typename linear_G_t::type lin_g = typename linear_G_t::type();
             typename linear_B_t::type lin_b = typename linear_B_t::type();
@@ -682,7 +678,6 @@ namespace color
                 lin_g = vec.a[1];
                 lin_b = vec.a[2];
             }
-
 
             if constexpr(!std::is_same_v<void, tf_args_2>)
             {
