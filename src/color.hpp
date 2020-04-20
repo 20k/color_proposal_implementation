@@ -697,9 +697,9 @@ namespace color
     }
 
     ///generic RGB -> XYZ
-    template<typename space, typename model, typename trans, typename alpha_1, typename alpha_2>
+    template<typename space, typename model, typename trans, typename alpha_1, typename alpha_2, typename tf_args_1 = void>
     inline
-    constexpr void color_convert(const basic_color<generic_RGB_space<space, trans>, model, alpha_1>& in, basic_color<XYZ_space, XYZ_model, alpha_2>& out)
+    constexpr void color_convert(const basic_color<generic_RGB_space<space, trans>, model, alpha_1>& in, basic_color<XYZ_space, XYZ_model, alpha_2>& out, arg_src_t<void> a1 = arg_src_t<void>(), tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>())
     {
         using type = space;
 
@@ -725,9 +725,9 @@ namespace color
     }
 
     ///XYZ -> generic RGB
-    template<typename space, typename model, typename trans, typename alpha_1, typename alpha_2>
+    template<typename space, typename model, typename trans, typename alpha_1, typename alpha_2, typename tf_args_1 = void>
     inline
-    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, basic_color<generic_RGB_space<space, trans>, model, alpha_2>& out)
+    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, basic_color<generic_RGB_space<space, trans>, model, alpha_2>& out, arg_dst_t<void> a1 = arg_dst_t<void>(), tf_dst_t<tf_args_1> tf_data_1 = tf_dst_t<tf_args_1>())
     {
         auto vec = temporary::multiply(space::XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
@@ -866,9 +866,32 @@ namespace color
         }
         else
         {
-            basic_color<XYZ_space, XYZ_model, typename T1::alpha_type> intermediate;
-            color_convert(in, intermediate, std::forward<Args>(args)...);
-            color_convert(intermediate, out); ///TODO: Args2...
+            basic_color<XYZ_space, XYZ_model, typename T1::alpha_type> val;
+
+            std::tuple<const T1&, basic_color<XYZ_space, XYZ_model, typename T1::alpha_type>&> tup(in, val);
+
+            auto arg_tup_1 = std::tuple_cat(tup,
+                                            tuple_arg_construct<arg_src_t>(args...),
+                                            tuple_arg_construct<tf_src_t>(args...));
+
+            std::apply([&](auto&&... args)
+            {
+                color_convert(args...);
+            }, arg_tup_1);
+
+            std::tuple<const basic_color<XYZ_space, XYZ_model, typename T1::alpha_type>&, T2&> tup2(val, out);
+
+            auto arg_tup_2 = std::tuple_cat(tup2,
+                                            tuple_arg_construct<arg_dst_t>(args...),
+                                            tuple_arg_construct<tf_dst_t>(args...));
+
+            std::apply([&](auto&&... args)
+            {
+                color_convert(args...);
+            }, arg_tup_2);
+
+            //color_convert(in, intermediate);
+            //color_convert(intermediate, out); ///TODO: Args2...
         }
     }
 
