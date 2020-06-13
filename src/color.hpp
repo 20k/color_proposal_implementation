@@ -12,6 +12,7 @@
 #include <cfloat>
 #include <tuple>
 #include <array>
+#include <cstdint>
 
 namespace temporary
 {
