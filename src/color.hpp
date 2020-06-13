@@ -13,6 +13,7 @@
 #include <tuple>
 #include <array>
 #include <cstdint>
+#include <concepts>
 
 namespace temporary
 {
@@ -434,8 +435,15 @@ namespace color
     struct generic_RGB_space : basic_color_space
     {
         using RGB_parameters = T;
-
         using transfer_function_parameters = U;
+
+        static constexpr bool is_rgb_space = true;
+    };
+
+    template<typename T>
+    concept IsGenericRGBSpace = requires(T a)
+    {
+        T::is_rgb_space;
     };
 
     using sRGB_space = generic_RGB_space<sRGB_parameters, transfer_function::sRGB_gamma>;
@@ -622,11 +630,18 @@ namespace color
     using XYZ = basic_color<XYZ_space, XYZ_model>;*/
 
     ///direct conversion between two arbitrary RGB space
-    template<typename space_1, typename model_1, typename gamma_1, typename alpha_1, typename space_2, typename model_2, typename gamma_2, typename alpha_2, typename tf_args_1 = void, typename tf_args_2 = void>
-    constexpr void color_convert(const basic_color<generic_RGB_space<space_1, gamma_1>, model_1, alpha_1>& in, basic_color<generic_RGB_space<space_2, gamma_2>, model_2, alpha_2>& out,
+    template<typename rgb_space_1, typename model_1, typename alpha_1, typename rgb_space_2, typename model_2, typename alpha_2, typename tf_args_1 = void, typename tf_args_2 = void>
+    requires IsGenericRGBSpace<rgb_space_1> && IsGenericRGBSpace<rgb_space_2>
+    constexpr void color_convert(const basic_color<rgb_space_1, model_1, alpha_1>& in, basic_color<rgb_space_2, model_2, alpha_2>& out,
                                  arg_src_t<void> a1 = arg_src_t<void>(), arg_dst_t<void> a2 = arg_dst_t<void>(),
                                  tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>(), tf_dst_t<tf_args_2> tf_data_2 = tf_dst_t<tf_args_2>())
     {
+        using space_1 = typename rgb_space_1::RGB_parameters;
+        using space_2 = typename rgb_space_2::RGB_parameters;
+
+        using gamma_1 = typename rgb_space_1::transfer_function_parameters;
+        using gamma_2 = typename rgb_space_2::transfer_function_parameters;
+
         ///different models and alpha
         if constexpr(std::is_same_v<space_1, space_2> && std::is_same_v<gamma_1, gamma_2>)
         {
