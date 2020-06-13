@@ -50,9 +50,9 @@ struct HSL_360 : color::basic_color<HSL_space, HSL_float_model, color::no_alpha>
     }
 };
 
-template<typename hsl_model, typename hsl_alpha, typename space_1, typename model_1, typename gamma_1, typename alpha_1>
+template<typename hsl_model, typename hsl_alpha, color::GenericRGBColor T2>
 inline
-void color_convert(const color::basic_color<HSL_space, hsl_model, hsl_alpha>& in, color::basic_color<color::generic_RGB_space<space_1, gamma_1>, model_1, alpha_1>& out)
+void color_convert(const color::basic_color<HSL_space, hsl_model, hsl_alpha>& in, T2& out)
 {
     using namespace color;
 
