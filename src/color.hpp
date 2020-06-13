@@ -441,7 +441,7 @@ namespace color
     };
 
     template<typename T>
-    concept IsGenericRGBSpace = requires(T a)
+    concept GenericRGBSpace = requires(T a)
     {
         T::is_rgb_space;
     };
@@ -559,6 +559,13 @@ namespace color
         using calpha::calpha;
     };
 
+
+    template<typename T>
+    concept GenericRGBColor = requires(T a)
+    {
+        requires GenericRGBSpace<typename T::space_type>;
+    };
+
     struct sRGB_uint8 : basic_color<sRGB_space, RGB_uint8_model, no_alpha>
     {
         constexpr sRGB_uint8(uint8_t _r, uint8_t _g, uint8_t _b){r = _r; g = _g; b = _b;}
@@ -630,17 +637,19 @@ namespace color
     using XYZ = basic_color<XYZ_space, XYZ_model>;*/
 
     ///direct conversion between two arbitrary RGB space
-    template<typename rgb_space_1, typename model_1, typename alpha_1, typename rgb_space_2, typename model_2, typename alpha_2, typename tf_args_1 = void, typename tf_args_2 = void>
-    requires IsGenericRGBSpace<rgb_space_1> && IsGenericRGBSpace<rgb_space_2>
-    constexpr void color_convert(const basic_color<rgb_space_1, model_1, alpha_1>& in, basic_color<rgb_space_2, model_2, alpha_2>& out,
+    template<GenericRGBColor T1, GenericRGBColor T2, typename tf_args_1 = void, typename tf_args_2 = void>
+    constexpr void color_convert(const T1& in, T2& out,
                                  arg_src_t<void> a1 = arg_src_t<void>(), arg_dst_t<void> a2 = arg_dst_t<void>(),
                                  tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>(), tf_dst_t<tf_args_2> tf_data_2 = tf_dst_t<tf_args_2>())
     {
-        using space_1 = typename rgb_space_1::RGB_parameters;
-        using space_2 = typename rgb_space_2::RGB_parameters;
+        using space_1 = typename T1::space_type::RGB_parameters;
+        using space_2 = typename T2::space_type::RGB_parameters;
 
-        using gamma_1 = typename rgb_space_1::transfer_function_parameters;
-        using gamma_2 = typename rgb_space_2::transfer_function_parameters;
+        using gamma_1 = typename T1::space_type::transfer_function_parameters;
+        using gamma_2 = typename T2::space_type::transfer_function_parameters;
+
+        using model_1 = typename T1::model_type;
+        using model_2 = typename T2::model_type;
 
         ///different models and alpha
         if constexpr(std::is_same_v<space_1, space_2> && std::is_same_v<gamma_1, gamma_2>)
