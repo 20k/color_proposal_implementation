@@ -717,11 +717,16 @@ namespace color
         alpha_convert(in, out);
     }
 
+    ///I think this function might be covered by the generic case
+    ///Possibly useful as ADL example though, as that is explicitly supported
     ///generic RGB -> XYZ
-    template<typename space, typename model, typename trans, typename alpha_1, typename alpha_2, typename tf_args_1 = void>
-    constexpr void color_convert(const basic_color<generic_RGB_space<space, trans>, model, alpha_1>& in, basic_color<XYZ_space, XYZ_model, alpha_2>& out, arg_src_t<void> a1 = arg_src_t<void>(), tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>())
+    template<GenericRGBColor T1, typename alpha_2, typename tf_args_1 = void>
+    constexpr void color_convert(const T1& in, basic_color<XYZ_space, XYZ_model, alpha_2>& out,
+                                 arg_src_t<void> a1 = arg_src_t<void>(), tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>())
     {
-        using type = space;
+        using model = T1::model_type;
+        using space = T1::space_type::RGB_parameters;
+        using trans = T1::space_type::transfer_function_parameters;
 
         using nonlinear_1_R_t = typename model::R_value;
         using nonlinear_1_G_t = typename model::G_value;
@@ -735,7 +740,7 @@ namespace color
         auto lin_g = trans::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
         auto lin_b = trans::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);
 
-        auto vec = temporary::multiply(type::linear_to_XYZ, temporary::vector_1x3{lin_r, lin_g, lin_b});
+        auto vec = temporary::multiply(space::linear_to_XYZ, temporary::vector_1x3{lin_r, lin_g, lin_b});
 
         model_convert_member<linear_R_t, normalised_float_value_model>(vec.a[0], out.X);
         model_convert_member<linear_G_t, normalised_float_value_model>(vec.a[1], out.Y);
@@ -745,9 +750,13 @@ namespace color
     }
 
     ///XYZ -> generic RGB
-    template<typename space, typename model, typename trans, typename alpha_1, typename alpha_2, typename tf_args_1 = void>
-    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, basic_color<generic_RGB_space<space, trans>, model, alpha_2>& out, arg_dst_t<void> a1 = arg_dst_t<void>(), tf_dst_t<tf_args_1> tf_data_1 = tf_dst_t<tf_args_1>())
+    template<GenericRGBColor T2, typename alpha_1, typename tf_args_1 = void>
+    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, T2& out, arg_dst_t<void> a1 = arg_dst_t<void>(), tf_dst_t<tf_args_1> tf_data_1 = tf_dst_t<tf_args_1>())
     {
+        using model = T2::model_type;
+        using space = T2::space_type::RGB_parameters;
+        using trans = T2::space_type::transfer_function_parameters;
+
         auto vec = temporary::multiply(space::XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
         /*out.r = trans::template transfer_function<typename model::R_transfer::nonlinear_t, typename model::R_transfer::linear_t>::from_linear(vec.a[0], trans());
