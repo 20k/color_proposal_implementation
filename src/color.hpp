@@ -844,11 +844,12 @@ namespace color
     template<typename T1, typename T2, typename... Args>
     constexpr void convert_impl(const T1& in, T2& out, Args&&... args)
     {
-        if constexpr(is_same_parameterisation(in, out))
+        if constexpr(std::is_same_v<T1, T2>)
         {
             out = in;
             return;
         }
+
         if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
         {
             std::tuple<const T1&, T2&> tup(in, out);
@@ -926,7 +927,7 @@ namespace color
     template<typename destination, typename source, typename... T>
     constexpr destination convert(const source& in, T&&... args)
     {
-        destination out;
+        destination out = destination();
         convert_impl(in, out, std::forward<T>(args)...);
         return out;
     }

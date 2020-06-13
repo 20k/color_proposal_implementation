@@ -2,14 +2,14 @@
 #include <assert.h>
 #include "common.hpp"
 
-namespace 
+namespace
 {
     struct tester
     {
         tester()
         {
             {
-                color::sRGB_float t1(0, 1, 0);
+                constexpr color::sRGB_float t1(0, 1, 0);
 
                 static_assert(color::has_optimised_conversion<color::sRGB_float, adobe_float>());
 
