@@ -14,6 +14,7 @@
 #include <array>
 #include <cstdint>
 #include <concepts>
+#include <system_error>
 
 namespace temporary
 {
@@ -139,6 +140,56 @@ namespace temporary
 ///arbitrary rgb -> xyz -> arbitrary rgb could be expressed as 1 matrix, but we have no way to express that. This is why folks uses connector objects
 namespace color
 {
+    enum class error : unsigned long
+    {
+        success = 0,
+        invalid_input = 1,
+        unrepresentable = 2,
+    };
+
+    namespace detail
+    {
+        struct color_error_category : std::error_category
+        {
+            virtual const char* name() const noexcept override final { return "ColorConversionError"; }
+
+            virtual std::string message(int c) const override final
+            {
+                switch(static_cast<error>(c))
+                {
+                case error::success:
+                    return "conversion successful";
+                case error::invalid_input:
+                    return "bad argument";
+                case error::unrepresentable:
+                    return "cannot represent in output colorspace";
+                default:
+                    return "unknown";
+                }
+            }
+
+            virtual std::error_condition default_error_condition(int c) const noexcept override final
+            {
+                switch(static_cast<error>(c))
+                {
+                case error::invalid_input:
+                    return make_error_condition(std::errc::invalid_argument);
+                case error::unrepresentable:
+                    return make_error_condition(std::errc::result_out_of_range);
+                default:
+                    return std::error_condition(c, *this);
+                }
+            }
+        };
+
+        inline
+        const color_error_category& get_color_error_category()
+        {
+            static color_error_category c;
+            return c;
+        }
+    }
+
     struct basic_color_space
     {
 
@@ -965,6 +1016,18 @@ namespace color
         convert_impl(in, out, std::forward<T>(args)...);
         return out;
     }
+}
+
+namespace std
+{
+    template <> struct is_error_code_enum<color::error> : true_type
+    {
+    };
+}
+
+inline std::error_code make_error_code(color::error e)
+{
+    return {static_cast<int>(e), color::detail::get_color_error_category()};
 }
 
 #endif // COLOR_HPP_INCLUDED
