@@ -37,7 +37,7 @@ struct slow_linear_sRGBA_color : color::basic_color<slow_sRGB_space, slow_sRGB_m
 
 template<typename A1, typename A2, typename tf_args_1 = void>
 constexpr inline
-void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, A1>& in, color::basic_color<slow_sRGB_space, slow_sRGB_model, A2>& out, color::arg_dst_t<void> a1 = color::arg_dst_t<void>(), color::tf_dst_t<tf_args_1> tf_data_1 = color::tf_dst_t<tf_args_1>())
+void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, A1>& in, color::basic_color<slow_sRGB_space, slow_sRGB_model, A2>& out, std::error_code& ec, color::arg_dst_t<void> a1 = color::arg_dst_t<void>(), color::tf_dst_t<tf_args_1> tf_data_1 = color::tf_dst_t<tf_args_1>())
 {
     auto transformed = temporary::multiply(slow_sRGB_space::impl_XYZ_to_linear, temporary::vector_1x3{in.X, in.Y, in.Z});
 
@@ -45,12 +45,12 @@ void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, 
     out.g = transformed.a[1];
     out.b = transformed.a[2];
 
-    color::alpha_convert(in, out);
+    color::alpha_convert(in, out, ec);
 }
 
 template<typename A1, typename A2, typename tf_args_1 = void>
 constexpr inline
-void color_convert(const color::basic_color<slow_sRGB_space, slow_sRGB_model, A1>& in, color::basic_color<color::XYZ_space, color::XYZ_model, A2>& out, color::arg_src_t<void> a1 = color::arg_src_t<void>(), color::tf_src_t<tf_args_1> tf_data_1 = color::tf_src_t<tf_args_1>())
+void color_convert(const color::basic_color<slow_sRGB_space, slow_sRGB_model, A1>& in, color::basic_color<color::XYZ_space, color::XYZ_model, A2>& out, std::error_code& ec, color::arg_src_t<void> a1 = color::arg_src_t<void>(), color::tf_src_t<tf_args_1> tf_data_1 = color::tf_src_t<tf_args_1>())
 {
     auto transformed = temporary::multiply(slow_sRGB_space::impl_linear_to_XYZ, temporary::vector_1x3{in.r, in.g, in.b});
 
@@ -58,5 +58,5 @@ void color_convert(const color::basic_color<slow_sRGB_space, slow_sRGB_model, A1
     out.Y = transformed.a[1];
     out.Z = transformed.a[2];
 
-    color::alpha_convert(in, out);
+    color::alpha_convert(in, out, ec);
 }

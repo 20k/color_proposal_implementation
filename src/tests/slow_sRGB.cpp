@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "common.hpp"
 
-namespace 
+namespace
 {
     struct tester
     {
@@ -13,7 +13,8 @@ namespace
 
                 static_assert(!color::has_optimised_conversion<slow_linear_sRGBA_color, color::linear_sRGBA_float>());
 
-                constexpr slow_linear_sRGBA_color cv = color::convert<slow_linear_sRGBA_color>(linear);
+                std::error_code ec;
+                constexpr slow_linear_sRGBA_color cv = color::convert<slow_linear_sRGBA_color>(linear, ec);
 
                 static_assert(approx_equal(cv.r, 1));
                 static_assert(approx_equal(cv.g, 1));
@@ -26,9 +27,10 @@ namespace
 
                 static_assert(!color::has_optimised_conversion<slow_linear_sRGBA_color, color::sRGBA_uint8>());
 
-                constexpr slow_linear_sRGBA_color cv = color::convert<slow_linear_sRGBA_color>(srgb);
+                std::error_code ec;
+                constexpr slow_linear_sRGBA_color cv = color::convert<slow_linear_sRGBA_color>(srgb, ec);
 
-                constexpr color::linear_sRGBA_float cv2 = color::convert<color::linear_sRGBA_float>(srgb);
+                constexpr color::linear_sRGBA_float cv2 = color::convert<color::linear_sRGBA_float>(srgb, ec);
 
                 static_assert(approx_equal(cv.r, cv2.r));
                 static_assert(approx_equal(cv.g, cv2.g));

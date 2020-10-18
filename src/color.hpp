@@ -253,7 +253,7 @@ namespace color
     }
 
     template<typename T1, typename T2>
-    constexpr void model_convert_member(const typename T1::type& in, typename T2::type& out)
+    constexpr void model_convert_member(const typename T1::type& in, typename T2::type& out, std::error_code& ec)
     {
         auto intermediate = ((in - T1::base) / (T1::scale)) * (T2::scale) + T2::base;
 
@@ -261,11 +261,19 @@ namespace color
             intermediate = round(intermediate);
 
         if(intermediate < T2::min)
+        {
             out = T2::min;
+            //ec = error::unrepresentable;
+        }
         else if(intermediate > T2::max)
+        {
             out = T2::max;
+            //ec = error::unrepresentable;
+        }
         else
+        {
             out = intermediate;
+        }
     }
 
     ///min and max are clamp values
@@ -367,10 +375,10 @@ namespace color
         {
             template<typename nonlinear, typename linear = normalised_float_value_model>
             static constexpr
-            typename linear::type to_linear(typename nonlinear::type in_component)
+            typename linear::type to_linear(typename nonlinear::type in_component, std::error_code& ec)
             {
                 float component = 0;
-                model_convert_member<nonlinear, normalised_float_value_model>(in_component, component);
+                model_convert_member<nonlinear, normalised_float_value_model>(in_component, component, ec);
 
                 if(component <= params::transfer_bdelta)
                     return component / params::transfer_delta;
@@ -380,7 +388,7 @@ namespace color
 
             template<typename nonlinear, typename linear = normalised_float_value_model>
             static constexpr
-            typename nonlinear::type from_linear(typename linear::type in_component)
+            typename nonlinear::type from_linear(typename linear::type in_component, std::error_code& ec)
             {
                 float my_val = 0;
 
@@ -390,7 +398,7 @@ namespace color
                     my_val = params::transfer_alpha * std::pow(in_component, 1/params::transfer_gamma) - (params::transfer_alpha - 1);
 
                 typename nonlinear::type ret = typename nonlinear::type();
-                model_convert_member<normalised_float_value_model, nonlinear>(my_val, ret);
+                model_convert_member<normalised_float_value_model, nonlinear>(my_val, ret, ec);
                 return ret;
             }
         };
@@ -399,19 +407,19 @@ namespace color
         {
             template<typename nonlinear, typename linear = normalised_float_value_model>
             static constexpr
-            typename linear::type to_linear(typename nonlinear::type in_component)
+            typename linear::type to_linear(typename nonlinear::type in_component, std::error_code& ec)
             {
                 typename linear::type component = typename linear::type();
-                model_convert_member<nonlinear, linear>(in_component, component);
+                model_convert_member<nonlinear, linear>(in_component, component, ec);
                 return component;
             }
 
             template<typename nonlinear, typename linear = normalised_float_value_model>
             static constexpr
-            typename nonlinear::type from_linear(typename linear::type in_component)
+            typename nonlinear::type from_linear(typename linear::type in_component, std::error_code& ec)
             {
                 typename nonlinear::type component = typename nonlinear::type();
-                model_convert_member<linear, nonlinear>(in_component, component);
+                model_convert_member<linear, nonlinear>(in_component, component, ec);
                 return component;
             }
         };
@@ -420,16 +428,16 @@ namespace color
         {
             template<typename nonlinear, typename linear = normalised_float_value_model>
             static constexpr
-            typename linear::type to_linear(typename nonlinear::type in_component)
+            typename linear::type to_linear(typename nonlinear::type in_component, std::error_code& ec)
             {
-                return gamma_static<sRGB_gamma_parameters>::to_linear<nonlinear, linear>(in_component);
+                return gamma_static<sRGB_gamma_parameters>::to_linear<nonlinear, linear>(in_component, ec);
             }
 
             template<typename nonlinear, typename linear = normalised_float_value_model>
             static constexpr
-            typename nonlinear::type from_linear(typename linear::type in_component)
+            typename nonlinear::type from_linear(typename linear::type in_component, std::error_code& ec)
             {
-                return gamma_static<sRGB_gamma_parameters>::from_linear<nonlinear, linear>(in_component);
+                return gamma_static<sRGB_gamma_parameters>::from_linear<nonlinear, linear>(in_component, ec);
             }
         };
     }
@@ -660,23 +668,23 @@ namespace color
     };
 
     template<typename T1, typename T2>
-    constexpr void alpha_convert(const alpha_model<T1>& in, alpha_model<T2>& out)
+    constexpr void alpha_convert(const alpha_model<T1>& in, alpha_model<T2>& out, std::error_code& ec)
     {
         static_assert(std::is_same_v<T1, void> == std::is_same_v<T2, void>, "Cannot drop or gain an alpha component");
 
         if constexpr(std::is_same_v<T1, void>)
             return;
         else
-            model_convert_member<T1, T2>(in.a, out.a);
+            model_convert_member<T1, T2>(in.a, out.a, ec);
     }
 
     template<typename T1, typename U1, typename V1,
              typename T2, typename U2, typename V2>
-    constexpr void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out)
+    constexpr void model_convert(const RGB_model<T1, U1, V1>& in, RGB_model<T2, U2, V2>& out, std::error_code& ec)
     {
-        model_convert_member<T1, T2>(in.r, out.r);
-        model_convert_member<U1, U2>(in.g, out.g);
-        model_convert_member<V1, V2>(in.b, out.b);
+        model_convert_member<T1, T2>(in.r, out.r, ec);
+        model_convert_member<U1, U2>(in.g, out.g, ec);
+        model_convert_member<V1, V2>(in.b, out.b, ec);
     }
 
     /*using sRGB_uint8 = basic_color<sRGB_space, RGB_uint8_model>;
@@ -689,9 +697,9 @@ namespace color
 
     ///direct conversion between two arbitrary RGB space
     template<GenericRGBColor T1, GenericRGBColor T2, typename tf_args_1 = void, typename tf_args_2 = void>
-    constexpr void color_convert(const T1& in, T2& out,
-                                 arg_src_t<void> a1 = arg_src_t<void>(), arg_dst_t<void> a2 = arg_dst_t<void>(),
-                                 tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>(), tf_dst_t<tf_args_2> tf_data_2 = tf_dst_t<tf_args_2>())
+    constexpr void color_convert(const T1& in, T2& out, std::error_code& ec,
+                            arg_src_t<void> a1 = arg_src_t<void>(), arg_dst_t<void> a2 = arg_dst_t<void>(),
+                            tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>(), tf_dst_t<tf_args_2> tf_data_2 = tf_dst_t<tf_args_2>())
     {
         using space_1 = typename T1::space_type::RGB_parameters;
         using space_2 = typename T2::space_type::RGB_parameters;
@@ -705,7 +713,7 @@ namespace color
         ///different models and alpha
         if constexpr(std::is_same_v<space_1, space_2> && std::is_same_v<gamma_1, gamma_2>)
         {
-            model_convert(in, out);
+            model_convert(in, out, ec);
         }
         else
         {
@@ -727,15 +735,15 @@ namespace color
 
             if constexpr(!std::is_same_v<void, tf_args_1>)
             {
-                lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r, tf_data_1.value());
-                lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g, tf_data_1.value());
-                lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b, tf_data_1.value());
+                lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r, tf_data_1.value(), ec);
+                lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g, tf_data_1.value(), ec);
+                lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b, tf_data_1.value(), ec);
             }
             else
             {
-                lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
-                lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
-                lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);
+                lin_r = gamma_1::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r, ec);
+                lin_g = gamma_1::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g, ec);
+                lin_b = gamma_1::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b, ec);
             }
 
             if constexpr(!std::is_same_v<space_1, space_2>)
@@ -753,26 +761,26 @@ namespace color
 
             if constexpr(!std::is_same_v<void, tf_args_2>)
             {
-                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r, tf_data_2.value());
-                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g, tf_data_2.value());
-                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b, tf_data_2.value());
+                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r, tf_data_2.value(), ec);
+                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g, tf_data_2.value(), ec);
+                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b, tf_data_2.value(), ec);
             }
             else
             {
-                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r);
-                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g);
-                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b);
+                out.r = gamma_2::template from_linear<nonlinear_2_R_t, linear_R_t>(lin_r, ec);
+                out.g = gamma_2::template from_linear<nonlinear_2_G_t, linear_G_t>(lin_g, ec);
+                out.b = gamma_2::template from_linear<nonlinear_2_B_t, linear_B_t>(lin_b, ec);
             }
         }
 
-        alpha_convert(in, out);
+        alpha_convert(in, out, ec);
     }
 
     ///I think this function might be covered by the generic case
     ///Possibly useful as ADL example though, as that is explicitly supported
     ///generic RGB -> XYZ
     template<GenericRGBColor T1, typename alpha_2, typename tf_args_1 = void>
-    constexpr void color_convert(const T1& in, basic_color<XYZ_space, XYZ_model, alpha_2>& out,
+    constexpr void color_convert(const T1& in, basic_color<XYZ_space, XYZ_model, alpha_2>& out, std::error_code& ec,
                                  arg_src_t<void> a1 = arg_src_t<void>(), tf_src_t<tf_args_1> tf_data_1 = tf_src_t<tf_args_1>())
     {
         using model = T1::model_type;
@@ -787,22 +795,22 @@ namespace color
         using linear_G_t = linear_type_v<trans, typename model::G_value>;
         using linear_B_t = linear_type_v<trans, typename model::B_value>;
 
-        auto lin_r = trans::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r);
-        auto lin_g = trans::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g);
-        auto lin_b = trans::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b);
+        auto lin_r = trans::template to_linear<nonlinear_1_R_t, linear_R_t>(in.r, ec);
+        auto lin_g = trans::template to_linear<nonlinear_1_G_t, linear_G_t>(in.g, ec);
+        auto lin_b = trans::template to_linear<nonlinear_1_B_t, linear_B_t>(in.b, ec);
 
         auto vec = temporary::multiply(space::linear_to_XYZ, temporary::vector_1x3{lin_r, lin_g, lin_b});
 
-        model_convert_member<linear_R_t, normalised_float_value_model>(vec.a[0], out.X);
-        model_convert_member<linear_G_t, normalised_float_value_model>(vec.a[1], out.Y);
-        model_convert_member<linear_B_t, normalised_float_value_model>(vec.a[2], out.Z);
+        model_convert_member<linear_R_t, normalised_float_value_model>(vec.a[0], out.X, ec);
+        model_convert_member<linear_G_t, normalised_float_value_model>(vec.a[1], out.Y, ec);
+        model_convert_member<linear_B_t, normalised_float_value_model>(vec.a[2], out.Z, ec);
 
-        alpha_convert(in, out);
+        alpha_convert(in, out, ec);
     }
 
     ///XYZ -> generic RGB
     template<GenericRGBColor T2, typename alpha_1, typename tf_args_1 = void>
-    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, T2& out, arg_dst_t<void> a1 = arg_dst_t<void>(), tf_dst_t<tf_args_1> tf_data_1 = tf_dst_t<tf_args_1>())
+    constexpr void color_convert(const basic_color<XYZ_space, XYZ_model, alpha_1>& in, T2& out, std::error_code& ec, arg_dst_t<void> a1 = arg_dst_t<void>(), tf_dst_t<tf_args_1> tf_data_1 = tf_dst_t<tf_args_1>())
     {
         using model = T2::model_type;
         using space = T2::space_type::RGB_parameters;
@@ -818,31 +826,31 @@ namespace color
         using nonlinear_1_G_t = typename model::G_value;
         using nonlinear_1_B_t = typename model::B_value;
 
-        out.r = trans::template from_linear<nonlinear_1_R_t, normalised_float_value_model>(vec.a[0]);
-        out.g = trans::template from_linear<nonlinear_1_G_t, normalised_float_value_model>(vec.a[1]);
-        out.b = trans::template from_linear<nonlinear_1_B_t, normalised_float_value_model>(vec.a[2]);
+        out.r = trans::template from_linear<nonlinear_1_R_t, normalised_float_value_model>(vec.a[0], ec);
+        out.g = trans::template from_linear<nonlinear_1_G_t, normalised_float_value_model>(vec.a[1], ec);
+        out.b = trans::template from_linear<nonlinear_1_B_t, normalised_float_value_model>(vec.a[2], ec);
 
-        alpha_convert(in, out);
+        alpha_convert(in, out, ec);
     }
 
     template<typename T, typename U, typename = void>
     struct has_direct_conversion_c : std::false_type{};
 
     template<typename T, typename U>
-    struct has_direct_conversion_c<T, U, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>()))>> : std::true_type{};
+    struct has_direct_conversion_c<T, U, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>(), std::declval<std::error_code&>()))>> : std::true_type{};
 
     template<typename T, typename U, typename A1, typename A2, typename A3, typename A4, typename = void>
     struct has_6arg_conversion_c : std::false_type{};
 
     template<typename T, typename U, typename A1, typename A2, typename A3, typename A4>
-    struct has_6arg_conversion_c<T, U, A1, A2, A3, A4, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>(),
+    struct has_6arg_conversion_c<T, U, A1, A2, A3, A4, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>(), std::declval<std::error_code&>(),
                                                                                           std::declval<A1>(), std::declval<A2>(), std::declval<A3>(), std::declval<A4>()))>> : std::true_type{};
 
     template<typename T, typename U, typename A1, typename A2, typename = void>
     struct has_2arg_conversion_c : std::false_type{};
 
     template<typename T, typename U, typename A1, typename A2>
-    struct has_2arg_conversion_c<T, U, A1, A2, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>(),
+    struct has_2arg_conversion_c<T, U, A1, A2, std::void_t<decltype(color_convert(std::declval<T>(), std::declval<U&>(), std::declval<std::error_code&>(),
                                                                                   std::declval<A1>(), std::declval<A2>()))>> : std::true_type{};
 
     template<typename T, typename U>
@@ -911,7 +919,7 @@ namespace color
     template<template<typename...> typename arg_template, typename... T>
     constexpr auto tuple_arg_construct(T&&... args)
     {
-        return tuple_type_or<arg_template, void>(std::tuple_cat(tuple_get_arg<arg_template>(args)...));
+        return tuple_type_or<arg_template, void>(std::tuple_cat(tuple_get_arg<arg_template>(std::forward<T>(args))...));
     }
 
     template<typename... T>
@@ -927,7 +935,7 @@ namespace color
     }
 
     template<typename T1, typename T2, typename... Args>
-    constexpr void convert_impl(const T1& in, T2& out, Args&&... args)
+    constexpr void convert_impl(const T1& in, T2& out, std::error_code& ec, Args&&... args)
     {
         if constexpr(std::is_same_v<T1, T2>)
         {
@@ -937,28 +945,28 @@ namespace color
 
         if constexpr(has_optimised_conversion<decltype(in), decltype(out)>())
         {
-            std::tuple<const T1&, T2&> tup(in, out);
+            std::tuple<const T1&, T2&, std::error_code&> tup(in, out, ec);
 
             auto arg_tup = std::tuple_cat(tup,
-                                          tuple_arg_construct<arg_src_t>(args...),
-                                          tuple_arg_construct<arg_dst_t>(args...),
-                                          tuple_arg_construct<tf_src_t>(args...),
-                                          tuple_arg_construct<tf_dst_t>(args...));
+                                          tuple_arg_construct<arg_src_t>(std::forward<decltype(args)>(args)...),
+                                          tuple_arg_construct<arg_dst_t>(std::forward<decltype(args)>(args)...),
+                                          tuple_arg_construct<tf_src_t>(std::forward<decltype(args)>(args)...),
+                                          tuple_arg_construct<tf_dst_t>(std::forward<decltype(args)>(args)...));
 
-            static_assert(std::tuple_size_v<decltype(arg_tup)> == 6);
+            static_assert(std::tuple_size_v<decltype(arg_tup)> == 7);
 
             if constexpr(tuple_6arg_exists(arg_tup))
             {
                 std::apply([&](auto&&... args)
                 {
-                    color_convert(args...);
+                    color_convert(std::forward<decltype(args)>(args)...);
                 }, arg_tup);
             }
             else
             {
                 std::apply([&](auto&&... args)
                 {
-                    color_convert(args...);
+                    color_convert(std::forward<decltype(args)>(args)...);
                 }, tup);
             }
         }
@@ -966,54 +974,54 @@ namespace color
         {
             basic_color<XYZ_space, XYZ_model, typename T1::alpha_type> val;
 
-            std::tuple<const T1&, basic_color<XYZ_space, XYZ_model, typename T1::alpha_type>&> tup(in, val);
-            std::tuple<const basic_color<XYZ_space, XYZ_model, typename T1::alpha_type>&, T2&> tup2(val, out);
+            std::tuple<const T1&, basic_color<XYZ_space, XYZ_model, typename T1::alpha_type>&, std::error_code&> tup(in, val, ec);
+            std::tuple<const basic_color<XYZ_space, XYZ_model, typename T1::alpha_type>&, T2&, std::error_code&> tup2(val, out, ec);
 
             auto arg_tup_1 = std::tuple_cat(tup,
-                                            tuple_arg_construct<arg_src_t>(args...),
-                                            tuple_arg_construct<tf_src_t>(args...));
+                                            tuple_arg_construct<arg_src_t>(std::forward<decltype(args)>(args)...),
+                                            tuple_arg_construct<tf_src_t>(std::forward<decltype(args)>(args)...));
 
             if constexpr(tuple_2arg_exists(arg_tup_1))
             {
                 std::apply([&](auto&&... args)
                 {
-                    color_convert(args...);
+                    color_convert(std::forward<decltype(args)>(args)...);
                 }, arg_tup_1);
             }
             else
             {
                 std::apply([&](auto&&... args)
                 {
-                    color_convert(args...);
+                    color_convert(std::forward<decltype(args)>(args)...);
                 }, tup);
             }
 
             auto arg_tup_2 = std::tuple_cat(tup2,
-                                            tuple_arg_construct<arg_dst_t>(args...),
-                                            tuple_arg_construct<tf_dst_t>(args...));
+                                            tuple_arg_construct<arg_dst_t>(std::forward<decltype(args)>(args)...),
+                                            tuple_arg_construct<tf_dst_t>(std::forward<decltype(args)>(args)...));
 
             if constexpr(tuple_2arg_exists(arg_tup_2))
             {
                 std::apply([&](auto&&... args)
                 {
-                    color_convert(args...);
+                    color_convert(std::forward<decltype(args)>(args)...);
                 }, arg_tup_2);
             }
             else
             {
                 std::apply([&](auto&&... args)
                 {
-                    color_convert(args...);
+                    color_convert(std::forward<decltype(args)>(args)...);
                 }, tup2);
             }
         }
     }
 
     template<typename destination, typename source, typename... T>
-    constexpr destination convert(const source& in, T&&... args)
+    constexpr destination convert(const source& in, std::error_code& ec, T&&... args)
     {
         destination out = destination();
-        convert_impl(in, out, std::forward<T>(args)...);
+        convert_impl(in, out, ec, std::forward<T>(args)...);
         return out;
     }
 }

@@ -52,7 +52,7 @@ struct HSL_360 : color::basic_color<HSL_space, HSL_float_model, color::no_alpha>
 
 template<typename hsl_model, typename hsl_alpha, color::GenericRGBColor T2>
 inline
-void color_convert(const color::basic_color<HSL_space, hsl_model, hsl_alpha>& in, T2& out)
+void color_convert(const color::basic_color<HSL_space, hsl_model, hsl_alpha>& in, T2& out, std::error_code& ec)
 {
     using namespace color;
 
@@ -61,9 +61,9 @@ void color_convert(const color::basic_color<HSL_space, hsl_model, hsl_alpha>& in
     float nS = 0;
     float nL = 0;
 
-    model_convert_member<typename hsl_model::H_value, normalised_float_value_model>(in.h, nH);
-    model_convert_member<typename hsl_model::S_value, normalised_float_value_model>(in.s, nS);
-    model_convert_member<typename hsl_model::L_value, normalised_float_value_model>(in.l, nL);
+    model_convert_member<typename hsl_model::H_value, normalised_float_value_model>(in.h, nH, ec);
+    model_convert_member<typename hsl_model::S_value, normalised_float_value_model>(in.s, nS, ec);
+    model_convert_member<typename hsl_model::L_value, normalised_float_value_model>(in.l, nL, ec);
 
     float min_l = std::min(nL, 1 - nL);
 
@@ -86,7 +86,7 @@ void color_convert(const color::basic_color<HSL_space, hsl_model, hsl_alpha>& in
     intermediate.g = hsl_fn(8, a, nH, nL);
     intermediate.b = hsl_fn(4, a, nH, nL);
 
-    alpha_convert(in, intermediate);
+    alpha_convert(in, intermediate, ec);
 
-    color_convert(intermediate, out);
+    color_convert(intermediate, out, ec);
 }

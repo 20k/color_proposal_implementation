@@ -33,9 +33,11 @@ void color_convert(const color::basic_color<color::XYZ_space, color::XYZ_model, 
     out.g = color::RGB_float_model::G_transfer::gamma::from_linear(vec.a[1], color::sRGB_parameters());
     out.b = color::RGB_float_model::B_transfer::gamma::from_linear(vec.a[2], color::sRGB_parameters());*/
 
-    out.r = color::transfer_function::sRGB_gamma::from_linear<color::normalised_float_value_model>(vec.a[0]);
-    out.g = color::transfer_function::sRGB_gamma::from_linear<color::normalised_float_value_model>(vec.a[1]);
-    out.b = color::transfer_function::sRGB_gamma::from_linear<color::normalised_float_value_model>(vec.a[2]);
+    std::error_code ec;
+
+    out.r = color::transfer_function::sRGB_gamma::from_linear<color::normalised_float_value_model>(vec.a[0], ec);
+    out.g = color::transfer_function::sRGB_gamma::from_linear<color::normalised_float_value_model>(vec.a[1], ec);
+    out.b = color::transfer_function::sRGB_gamma::from_linear<color::normalised_float_value_model>(vec.a[2], ec);
 
     color::alpha_convert(in, out);
 }

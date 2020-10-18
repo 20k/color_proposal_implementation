@@ -81,7 +81,8 @@ void tests()
     {
         constexpr color::linear_sRGBA_float linear(1, 1, 0.5, 200/255.f);
 
-        constexpr color::sRGBA_uint8 srgb = color::convert<color::sRGBA_uint8>(linear);
+        std::error_code ec;
+        constexpr color::sRGBA_uint8 srgb = color::convert<color::sRGBA_uint8>(linear, ec);
 
         static_assert(color::has_optimised_conversion<color::linear_sRGBA_float, color::sRGBA_uint8>());
 
@@ -123,11 +124,12 @@ void tests()
 
         static_assert(color::has_optimised_conversion<color::sRGB_uint8, color::XYZ>());
 
-        color::XYZ test_xyz = color::convert<color::XYZ>(val3);
+        std::error_code ec;
+        color::XYZ test_xyz = color::convert<color::XYZ>(val3, ec);
 
         static_assert(color::has_optimised_conversion<color::XYZ, color::sRGB_float>());
 
-        color::sRGB_float val4 = color::convert<color::sRGB_float>(test_xyz);
+        color::sRGB_float val4 = color::convert<color::sRGB_float>(test_xyz, ec);
 
         assert(approx_equal(val4.r, 1));
         assert(approx_equal(val4.g, 0.498039));
@@ -139,7 +141,8 @@ void tests()
 
         color::sRGBA_uint8 t1(255, 127, 80, 230);
 
-        color::sRGBA_float t2 = color::convert<color::sRGBA_float>(t1);
+        std::error_code ec;
+        color::sRGBA_float t2 = color::convert<color::sRGBA_float>(t1, ec);
 
         assert(approx_equal(t2.r, 1));
         assert(approx_equal(t2.g, 0.498039));
@@ -153,7 +156,8 @@ void tests()
 
         static_assert(color::has_optimised_conversion<color::linear_sRGB_float, color::sRGB_float>());
 
-        color::sRGB_float srgb = color::convert<color::sRGB_float>(lin);
+        std::error_code ec;
+        color::sRGB_float srgb = color::convert<color::sRGB_float>(lin, ec);
 
         assert(approx_equal(srgb.r, 1));
         assert(approx_equal(srgb.g, 0));
@@ -165,7 +169,8 @@ void tests()
 
         static_assert(color::has_optimised_conversion<color::linear_sRGB_float, color::sRGB_uint8>());
 
-        color::sRGB_uint8 srgb = color::convert<color::sRGB_uint8>(lin);
+        std::error_code ec;
+        color::sRGB_uint8 srgb = color::convert<color::sRGB_uint8>(lin, ec);
 
         assert(approx_equal(srgb.r, 188));
         assert(approx_equal(srgb.g, 255));
@@ -185,7 +190,8 @@ void tests()
 int main()
 {
     color::sRGB_uint8 val(255, 127, 80);
-    color::convert<color::linear_sRGB_float>(val);
+    std::error_code ec;
+    color::convert<color::linear_sRGB_float>(val, ec);
 
     static_assert(color::has_optimised_conversion<color::sRGB_uint8, color::linear_sRGB_float>());
 
